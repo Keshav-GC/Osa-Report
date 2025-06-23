@@ -22,7 +22,7 @@
             border: 1px solid #d1d5db;
             border-radius: 0.375rem;
             width: 100%;
-            z-index: 10;
+            z-index: 20; /* Ensure it's above other elements */
             max-height: 200px;
             overflow-y: auto;
             margin-top: 0.25rem;
@@ -52,62 +52,133 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        /* Custom Toggle Switch */
+        .toggle-container {
+            display: flex;
+            background-color: #e5e7eb;
+            border-radius: 9999px;
+            padding: 4px;
+            width: fit-content;
+        }
+        .toggle-label {
+            cursor: pointer;
+            padding: 6px 16px;
+            font-size: 14px;
+            font-weight: 500;
+            border-radius: 9999px;
+            transition: all 0.2s ease-in-out;
+            color: #4b5563;
+        }
+        .toggle-radio:checked + .toggle-label {
+            background-color: #ffffff;
+            color: #1e40af;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        }
     </style>
 </head>
-<body class="bg-gray-100 text-gray-800 p-4 md:p-8">
+<body class="bg-gray-100 text-gray-800">
 
-    <div class="max-w-7xl mx-auto bg-white rounded-xl shadow-lg p-6 md:p-8 space-y-10">
-        
-        <div class="mb-8">
-            <h1 class="text-3xl font-bold text-gray-900">Grupo Bimbo OSA Dashboard</h1>
-            <p class="text-gray-600 mt-1">This report is automatically updated. Data is refreshed each time the page is loaded.</p>
-        </div>
-
-        <!-- Section 1: Brand-Wise Summary -->
-        <div>
-            <h2 class="text-2xl font-bold text-gray-800 border-b pb-2 mb-6">Brand-Wise Summary</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 items-end">
-                <div>
-                    <label for="platform" class="block text-sm font-medium text-gray-700 mb-1">Filter Platform</label>
-                    <select id="platform" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 disabled:opacity-50" disabled></select>
+    <!-- Login Overlay -->
+    <div id="login-overlay" class="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-lg shadow-2xl p-8 w-full max-w-sm">
+            <h2 class="text-2xl font-bold text-center text-gray-900 mb-6">Dashboard Login</h2>
+            <form id="login-form">
+                <div class="space-y-4">
+                    <div>
+                        <label for="username" class="block text-sm font-medium text-gray-700">Account Name</label>
+                        <input type="text" id="username" name="username" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" required>
+                    </div>
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+                        <input type="password" id="password" name="password" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" required>
+                    </div>
+                    <p id="login-error" class="text-sm text-red-600 hidden">Invalid username or password.</p>
                 </div>
-                <div>
-                    <label for="bgr" class="block text-sm font-medium text-gray-700 mb-1">Filter BGR</label>
-                    <select id="bgr" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 disabled:opacity-50" disabled></select>
-                </div>
-                <div class="custom-select-container">
-                    <label for="gc_city_select" class="block text-sm font-medium text-gray-700 mb-1">Filter City</label>
-                    <button id="gc_city_select" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5 text-left flex justify-between items-center disabled:opacity-50" disabled>
-                        <span class="truncate">Select Cities</span>
-                        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                <div class="mt-6">
+                    <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        Login
                     </button>
-                    <div id="gc_city_options" class="custom-select-options"></div>
                 </div>
-            </div>
-            <div id="output-brand" class="bg-gray-50 p-4 rounded-lg min-h-[300px] flex items-center justify-center">
-                 <div id="initial-message" class="text-center text-gray-500">
-                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m-15.357-2a8.001 8.001 0 0115.357-2m0 0H15" /></svg>
-                    <h3 class="mt-2 text-sm font-semibold text-gray-900">Loading Live Data...</h3>
-                    <p class="mt-1 text-sm text-gray-500">Please wait a moment.</p>
-                </div>
-            </div>
+            </form>
         </div>
-
-        <!-- Section 2: SKU-Level Deep Dive -->
-        <div id="sku-section" class="hidden">
-             <h2 class="text-2xl font-bold text-gray-800 border-b pb-2 mb-6">SKU-Level Deep Dive</h2>
-             <div>
-                <label for="sku" class="block text-sm font-medium text-gray-700 mb-1">Filter SKU (Title)</label>
-                <select id="sku" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 disabled:opacity-50" disabled></select>
+    </div>
+    
+    <!-- Main Dashboard Content (hidden by default) -->
+    <div id="dashboard-content" class="hidden p-4 md:p-8">
+        <div class="max-w-7xl mx-auto bg-white rounded-xl shadow-lg p-6 md:p-8 space-y-10">
+            
+            <div class="mb-8">
+                <h1 class="text-3xl font-bold text-gray-900">Grupo Bimbo OSA Dashboard</h1>
+                <p class="text-gray-600 mt-1">This report is automatically updated. Data is refreshed each time the page is loaded.</p>
             </div>
-             <div id="output-sku" class="bg-gray-50 p-4 rounded-lg min-h-[300px] flex items-center justify-center mt-6">
-                <p class="text-gray-500">Select an SKU to see the detailed breakdown.</p>
-             </div>
+
+            <!-- Section 1: Brand-Wise Summary -->
+            <div>
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b pb-2 mb-6">
+                     <h2 class="text-2xl font-bold text-gray-800">Brand-Wise Summary</h2>
+                     <div id="toggle-brand" class="toggle-container mt-4 md:mt-0">
+                        <input type="radio" id="brand-osa-all" name="osaTypeBrand" value="all_stores" class="hidden toggle-radio" checked>
+                        <label for="brand-osa-all" class="toggle-label">OSA (All Stores)</label>
+                        <input type="radio" id="brand-osa-listed" name="osaTypeBrand" value="listed_stores" class="hidden toggle-radio">
+                        <label for="brand-osa-listed" class="toggle-label">OSA (Listed Stores)</label>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 items-end">
+                    <div>
+                        <label for="platform" class="block text-sm font-medium text-gray-700 mb-1">Filter Platform</label>
+                        <select id="platform" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 disabled:opacity-50" disabled></select>
+                    </div>
+                    <div>
+                        <label for="bgr" class="block text-sm font-medium text-gray-700 mb-1">Filter BGR</label>
+                        <select id="bgr" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 disabled:opacity-50" disabled></select>
+                    </div>
+                    <div class="custom-select-container">
+                        <label for="gc_city_select" class="block text-sm font-medium text-gray-700 mb-1">Filter City</label>
+                        <button id="gc_city_select" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5 text-left flex justify-between items-center disabled:opacity-50" disabled>
+                            <span class="truncate">Select Cities</span>
+                            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </button>
+                        <div id="gc_city_options" class="custom-select-options"></div>
+                    </div>
+                </div>
+                <div id="output-brand" class="bg-gray-50 p-4 rounded-lg min-h-[300px] flex items-center justify-center">
+                     <div id="initial-message" class="text-center text-gray-500">
+                        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m-15.357-2a8.001 8.001 0 0115.357-2m0 0H15" /></svg>
+                        <h3 class="mt-2 text-sm font-semibold text-gray-900">Waiting for Login</h3>
+                        <p class="mt-1 text-sm text-gray-500">Data will load after successful login.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 2: SKU-Level Deep Dive -->
+            <div id="sku-section" class="hidden">
+                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b pb-2 mb-6">
+                    <h2 class="text-2xl font-bold text-gray-800">SKU-Level Deep Dive</h2>
+                    <div id="toggle-sku" class="toggle-container mt-4 md:mt-0">
+                        <input type="radio" id="sku-osa-all" name="osaTypeSku" value="all_stores" class="hidden toggle-radio" checked>
+                        <label for="sku-osa-all" class="toggle-label">OSA (All Stores)</label>
+                        <input type="radio" id="sku-osa-listed" name="osaTypeSku" value="listed_stores" class="hidden toggle-radio">
+                        <label for="sku-osa-listed" class="toggle-label">OSA (Listed Stores)</label>
+                    </div>
+                </div>
+                 <div>
+                    <label for="sku" class="block text-sm font-medium text-gray-700 mb-1">Filter SKU (Title)</label>
+                    <select id="sku" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 disabled:opacity-50" disabled></select>
+                </div>
+                 <div id="output-sku" class="bg-gray-50 p-4 rounded-lg min-h-[300px] flex items-center justify-center mt-6">
+                    <p class="text-gray-500">Select an SKU to see the detailed breakdown.</p>
+                 </div>
+            </div>
         </div>
     </div>
 
     <script>
         // --- Core Application Elements ---
+        const loginOverlay = document.getElementById('login-overlay');
+        const loginForm = document.getElementById('login-form');
+        const loginError = document.getElementById('login-error');
+        const dashboardContent = document.getElementById('dashboard-content');
+        
         const platformSelect = document.getElementById('platform');
         const bgrSelect = document.getElementById('bgr');
         const skuSelect = document.getElementById('sku');
@@ -116,6 +187,9 @@
         const outputBrandDiv = document.getElementById('output-brand');
         const outputSkuDiv = document.getElementById('output-sku');
         const skuSection = document.getElementById('sku-section');
+        const toggleBrandContainer = document.getElementById('toggle-brand');
+        const toggleSkuContainer = document.getElementById('toggle-sku');
+
 
         // --- Data Source ---
         const dataUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSs0rx52hCw6ZQRgnjNgZ6iJHKq6zZoW4-p1kgqYklsHOBOdP9ZExcYtXyZlA81Bu0XAVXfoT3xm6Wm/pub?gid=0&single=true&output=csv';
@@ -127,10 +201,13 @@
         let brandFilteredData = [];
 
         // --- Event Listeners ---
-        window.addEventListener('load', loadDataFromUrl);
+        loginForm.addEventListener('submit', handleLogin);
         platformSelect.addEventListener('change', refreshAllTables);
         bgrSelect.addEventListener('change', refreshAllTables);
         skuSelect.addEventListener('change', refreshSkuTable);
+        toggleBrandContainer.addEventListener('change', () => processAndRenderPivot(brandFilteredData, outputBrandDiv, getOsaType('brand')));
+        toggleSkuContainer.addEventListener('change', refreshSkuTable);
+
 
         gcCitySelectButton.addEventListener('click', () => {
             if (gcCitySelectButton.disabled) return;
@@ -143,31 +220,43 @@
             }
         });
 
-        /**
-         * Fetches and parses data from the Google Sheet URL on page load.
-         */
+        function handleLogin(event) {
+            event.preventDefault();
+            const username = event.target.username.value;
+            const password = event.target.password.value;
+            
+            if (username === 'Grupobimbo' && password === 'Grupobimbo') {
+                loginOverlay.classList.add('hidden');
+                dashboardContent.classList.remove('hidden');
+                loadDataFromUrl();
+            } else {
+                loginError.classList.remove('hidden');
+            }
+        }
+
         function loadDataFromUrl() {
             showLoader(outputBrandDiv, 'Loading live data from Google Sheets...');
             skuSection.classList.add('hidden');
 
             Papa.parse(dataUrl, {
-                download: true, // Required for remote URLs
+                download: true,
                 header: true, 
                 skipEmptyLines: true,
                 complete: (results) => {
                     const headers = results.meta.fields.map(h => h.trim().toLowerCase());
                     columnKeys = {
-                        platform: headers.find(h => h.includes('platform')) || '',
+                        platform: headers.find(h => h.includes('gc_platform')) || '',
                         bgr: headers.find(h => h.includes('bgr')) || '',
                         city: headers.find(h => h.includes('city')) || '',
-                        sku: headers.find(h => h.includes('jd_title') || h.includes('title')) || '',
-                        time: headers.find(h => h.includes('crawl_t') || h.includes('time')) || '',
-                        date: headers.find(h => h.includes('date')) || '',
-                        availability: headers.find(h => h.includes('wt_availability') || h.includes('wt availabili')) || '',
-                        scrapes: headers.find(h => h.includes('wt_scrapes') || h.includes('wt scrapes')) || '',
+                        sku: headers.find(h => h.includes('title')) || '',
+                        time: headers.find(h => h.includes('gc_crawl_time')) || '',
+                        date: headers.find(h => h.includes('report_date')) || '',
+                        available: headers.find(h => h.includes('available_stores')) || '',
+                        listed: headers.find(h => h.includes('listed_stores')) || '',
+                        total: headers.find(h => h.includes('total_stores')) || '',
                     };
-                    if (!columnKeys.availability || !columnKeys.scrapes) {
-                        showError(outputBrandDiv, "Data source error. Please ensure your Google Sheet has 'wt_availability' and 'wt_scrapes' columns.");
+                    if (!columnKeys.available || !columnKeys.listed || !columnKeys.total) {
+                        showError(outputBrandDiv, "Data source error. Please ensure your sheet has 'AVAILABLE_STORES', 'LISTED_STORES', and 'TOTAL_STORES' columns.");
                         return;
                     }
                     const originalHeaders = results.meta.fields;
@@ -183,10 +272,15 @@
                     enableControls();
                     refreshAllTables();
                 },
-                error: (error) => showError(outputBrandDiv, "Could not load data from the source link. Please check the URL and sharing settings.")
+                error: (error) => showError(outputBrandDiv, "Could not load data from the source link. Check the URL and sharing settings.")
             });
         }
         
+        function getOsaType(section) { // section is 'brand' or 'sku'
+            const selector = `input[name="osaType${section === 'brand' ? 'Brand' : 'Sku'}"]:checked`;
+            return document.querySelector(selector).value;
+        }
+
         function populateBrandFilters() {
             if (baseData.length === 0) return;
             const platforms = new Set(baseData.map(row => row[columnKeys.platform]));
@@ -211,7 +305,7 @@
                 selectedCities.has(row[columnKeys.city])
             );
 
-            processAndRenderPivot(brandFilteredData, outputBrandDiv);
+            processAndRenderPivot(brandFilteredData, outputBrandDiv, getOsaType('brand'));
             
             if(brandFilteredData.length > 0) {
                 skuSection.classList.remove('hidden');
@@ -227,10 +321,10 @@
         function refreshSkuTable() {
             const selectedSku = skuSelect.value;
             const skuFilteredData = brandFilteredData.filter(row => row[columnKeys.sku] === selectedSku);
-            processAndRenderPivot(skuFilteredData, outputSkuDiv);
+            processAndRenderPivot(skuFilteredData, outputSkuDiv, getOsaType('sku'));
         }
 
-        function processAndRenderPivot(data, outputElement) {
+        function processAndRenderPivot(data, outputElement, osaType) {
             if (data.length === 0) {
                 showError(outputElement, "No data matches the current filter selection.");
                 return;
@@ -242,74 +336,93 @@
             data.forEach(row => {
                 const time = row[columnKeys.time];
                 const date = row[columnKeys.date];
-                const availability = parseFloat(row[columnKeys.availability]);
-                const scrapes = parseFloat(row[columnKeys.scrapes]);
-                if (isNaN(availability) || isNaN(scrapes) || !time || !date) return;
+                const available = parseFloat(row[columnKeys.available]);
+                const listed = parseFloat(row[columnKeys.listed]);
+                const total = parseFloat(row[columnKeys.total]);
+
+                if (isNaN(available) || isNaN(listed) || isNaN(total) || !time || !date) return;
+                
                 dates.add(date);
                 crawlTimes.add(time);
                 if (!pivotData[time]) pivotData[time] = {};
-                if (!pivotData[time][date]) pivotData[time][date] = { availability_sum: 0, scrapes_sum: 0 };
-                pivotData[time][date].availability_sum += availability;
-                pivotData[time][date].scrapes_sum += scrapes;
+                if (!pivotData[time][date]) {
+                    pivotData[time][date] = { available_sum: 0, listed_sum: 0, total_sum: 0 };
+                }
+                pivotData[time][date].available_sum += available;
+                pivotData[time][date].listed_sum += listed;
+                pivotData[time][date].total_sum += total;
             });
             const sortedDates = Array.from(dates).sort((a, b) => parseDate(a) - parseDate(b));
             const sortedCrawlTimes = Array.from(crawlTimes).sort((a, b) => convertTimeTo24Hour(a) - convertTimeTo24Hour(b));
             if (sortedDates.length === 0 || sortedCrawlTimes.length === 0){
-                showError(outputElement, "Could not generate pivot table. Check if 'date' and 'crawl time' columns contain valid data.");
+                showError(outputElement, "Could not generate pivot table. Check if date/time columns have valid data.");
                 return;
             }
-            renderPivotTable(pivotData, sortedDates, sortedCrawlTimes, outputElement);
+            renderPivotTable(pivotData, sortedDates, sortedCrawlTimes, outputElement, osaType);
         }
 
-        function renderPivotTable(pivotData, sortedDates, sortedCrawlTimes, outputElement) {
+        function renderPivotTable(pivotData, sortedDates, sortedCrawlTimes, outputElement, osaType) {
             let tableHtml = `<div class="overflow-x-auto"><table class="min-w-full divide-y divide-gray-300">`;
             tableHtml += `<thead class="bg-gray-50"><tr><th scope="col" class="sticky left-0 bg-gray-50 z-10 py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Crawl Time</th>`;
             sortedDates.forEach(date => {
                 tableHtml += `<th scope="col" class="px-3 py-3.5 text-center text-sm font-semibold text-gray-900">${date}</th>`;
             });
             tableHtml += `<th scope="col" class="sticky right-0 bg-gray-50 z-10 py-3.5 pl-3 pr-4 text-center text-sm font-semibold text-gray-900 sm:pr-6">Grand Total</th></tr></thead>`;
+            
             tableHtml += `<tbody class="divide-y divide-gray-200 bg-white">`;
             const dateTotals = {};
-            sortedDates.forEach(d => dateTotals[d] = { availability_sum: 0, scrapes_sum: 0 });
+            sortedDates.forEach(d => dateTotals[d] = { available_sum: 0, listed_sum: 0, total_sum: 0 });
+            
             sortedCrawlTimes.forEach(time => {
-                let rowTotalAvailability = 0; let rowTotalScrapes = 0;
+                let rowTotalAvailable = 0, rowTotalListed = 0, rowTotalTotal = 0;
                 tableHtml += `<tr><td class="sticky left-0 bg-white z-10 whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">${time}</td>`;
                 sortedDates.forEach(date => {
                     const cell = pivotData[time] && pivotData[time][date];
                     if (cell) {
-                        const avg = cell.scrapes_sum > 0 ? (cell.availability_sum / cell.scrapes_sum) * 100 : 0;
+                        const denominator = osaType === 'all_stores' ? cell.total_sum : cell.listed_sum;
+                        const avg = denominator > 0 ? (cell.available_sum / denominator) * 100 : 0;
                         tableHtml += `<td class="whitespace-nowrap px-3 py-4 text-sm text-center text-gray-500">${avg.toFixed(0)}%</td>`;
-                        rowTotalAvailability += cell.availability_sum; rowTotalScrapes += cell.scrapes_sum;
-                        dateTotals[date].availability_sum += cell.availability_sum; dateTotals[date].scrapes_sum += cell.scrapes_sum;
+                        rowTotalAvailable += cell.available_sum;
+                        rowTotalListed += cell.listed_sum;
+                        rowTotalTotal += cell.total_sum;
+                        dateTotals[date].available_sum += cell.available_sum;
+                        dateTotals[date].listed_sum += cell.listed_sum;
+                        dateTotals[date].total_sum += cell.total_sum;
                     } else { tableHtml += `<td></td>`; }
                 });
-                const rowAvg = rowTotalScrapes > 0 ? (rowTotalAvailability / rowTotalScrapes) * 100 : 0;
+                const rowDenominator = osaType === 'all_stores' ? rowTotalTotal : rowTotalListed;
+                const rowAvg = rowDenominator > 0 ? (rowTotalAvailable / rowDenominator) * 100 : 0;
                 tableHtml += `<td class="sticky right-0 bg-white z-10 whitespace-nowrap py-4 pl-3 pr-4 text-sm text-center font-semibold text-gray-900 sm:pr-6">${rowAvg.toFixed(0)}%</td></tr>`;
             });
             tableHtml += `</tbody>`;
+
             tableHtml += `<tfoot class="bg-gray-50"><tr><th scope="row" class="sticky left-0 bg-gray-50 z-10 pl-4 pr-3 pt-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Grand Total</th>`;
-            let overallTotalAvailability = 0; let overallTotalScrapes = 0;
+            let overallTotalAvailable = 0, overallTotalListed = 0, overallTotalTotal = 0;
             sortedDates.forEach(date => {
                 const total = dateTotals[date];
-                const avg = total && total.scrapes_sum > 0 ? (total.availability_sum / total.scrapes_sum) * 100 : 0;
+                const colDenominator = osaType === 'all_stores' ? total.total_sum : total.listed_sum;
+                const avg = total && colDenominator > 0 ? (total.available_sum / colDenominator) * 100 : 0;
                 tableHtml += `<th scope="col" class="px-3 pt-3 text-center text-sm font-semibold text-gray-900">${avg.toFixed(0)}%</th>`;
-                if(total) { overallTotalAvailability += total.availability_sum; overallTotalScrapes += total.scrapes_sum; }
+                if(total) { 
+                    overallTotalAvailable += total.available_sum; 
+                    overallTotalListed += total.listed_sum;
+                    overallTotalTotal += total.total_sum;
+                }
             });
-            const overallAvg = overallTotalScrapes > 0 ? (overallTotalAvailability / overallTotalScrapes) * 100 : 0;
+            const overallDenominator = osaType === 'all_stores' ? overallTotalTotal : overallTotalListed;
+            const overallAvg = overallDenominator > 0 ? (overallTotalAvailable / overallDenominator) * 100 : 0;
             tableHtml += `<th scope="col" class="sticky right-0 bg-gray-50 z-10 py-3.5 pl-3 pr-4 text-center text-sm font-semibold text-gray-900 sm:pr-6">${overallAvg.toFixed(0)}%</th>`;
             tableHtml += `</tr></tfoot></table></div>`;
             outputElement.innerHTML = tableHtml;
         }
 
+        // --- UTILITY FUNCTIONS ---
         function populateSelect(selectElement, optionsSet) {
             const oldValue = selectElement.value;
             selectElement.innerHTML = '';
             Array.from(optionsSet).sort().forEach(option => {
                 if(option){
-                    const opt = document.createElement('option');
-                    opt.value = option;
-                    opt.textContent = option;
-                    selectElement.appendChild(opt);
+                    const opt = document.createElement('option'); opt.value = option; opt.textContent = option; selectElement.appendChild(opt);
                 }
             });
             if(Array.from(optionsSet).includes(oldValue)) selectElement.value = oldValue;
@@ -321,8 +434,7 @@
                 const isChecked = e.target.checked;
                 document.querySelectorAll('#gc_city_options input[type="checkbox"]').forEach(cb => { cb.checked = isChecked; });
                 selectedCities = isChecked ? new Set(Array.from(citiesSet).filter(Boolean)) : new Set();
-                updateCityButtonText();
-                refreshAllTables();
+                updateCityButtonText(); refreshAllTables();
             });
             gcCityOptionsContainer.appendChild(allOption);
             Array.from(citiesSet).sort().forEach(city => {
@@ -334,12 +446,9 @@
             });
         }
         function createCityCheckbox(text, id, isChecked){
-            const optionDiv = document.createElement('div');
-            optionDiv.className = 'custom-select-option';
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox'; checkbox.id = id; checkbox.value = text; checkbox.checked = isChecked;
-            const label = document.createElement('label');
-            label.htmlFor = id; label.textContent = text; label.className = "ml-2 text-sm text-gray-800 cursor-pointer w-full";
+            const optionDiv = document.createElement('div'); optionDiv.className = 'custom-select-option';
+            const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.id = id; checkbox.value = text; checkbox.checked = isChecked;
+            const label = document.createElement('label'); label.htmlFor = id; label.textContent = text; label.className = "ml-2 text-sm text-gray-800 cursor-pointer w-full";
             optionDiv.appendChild(checkbox); optionDiv.appendChild(label);
             return optionDiv;
         }
@@ -350,8 +459,7 @@
             if(!event.target.checked) allCheckbox.checked = false;
             const totalCities = new Set(baseData.map(r => r[columnKeys.city]).filter(Boolean)).size;
             if(selectedCities.size === totalCities) allCheckbox.checked = true;
-            updateCityButtonText();
-            refreshAllTables();
+            updateCityButtonText(); refreshAllTables();
         }
         function updateCityButtonText() {
             const button = gcCitySelectButton.querySelector('span');
