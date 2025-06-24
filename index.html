@@ -12,31 +12,45 @@
             font-family: 'Inter', sans-serif;
             background-color: #f3f4f6;
         }
-        .custom-select-container {
+        .searchable-multiselect-container {
             position: relative;
         }
-        .custom-select-options {
-            display: none;
+        .searchable-multiselect-options {
+            display: none; /* Hidden by default */
             position: absolute;
             background-color: white;
             border: 1px solid #d1d5db;
             border-radius: 0.375rem;
             width: 100%;
-            z-index: 20; /* Ensure it's above other elements */
-            max-height: 200px;
-            overflow-y: auto;
+            z-index: 20;
+            max-height: 250px;
             margin-top: 0.25rem;
+            overflow-y: hidden;
+            flex-direction: column;
         }
-        .custom-select-option {
+        .searchable-multiselect-options.visible {
+            display: flex; /* Make visible */
+        }
+        .searchable-multiselect-options .search-input {
+            padding: 0.5rem 0.75rem;
+            border-bottom: 1px solid #d1d5db;
+            width: 100%;
+            outline: none;
+        }
+        .searchable-multiselect-options .options-list {
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+        .searchable-multiselect-option {
             display: flex;
             align-items: center;
             padding: 0.5rem 1rem;
             cursor: pointer;
         }
-        .custom-select-option:hover {
+        .searchable-multiselect-option:hover {
             background-color: #f3f4f6;
         }
-        .custom-select-option input {
+        .searchable-multiselect-option input {
             margin-right: 0.75rem;
         }
         .loader {
@@ -52,7 +66,6 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        /* Custom Toggle Switch */
         .toggle-container {
             display: flex;
             background-color: #e5e7eb;
@@ -84,34 +97,22 @@
             <h2 class="text-2xl font-bold text-center text-gray-900 mb-6">Dashboard Login</h2>
             <form id="login-form">
                 <div class="space-y-4">
-                    <div>
-                        <label for="username" class="block text-sm font-medium text-gray-700">Account Name</label>
-                        <input type="text" id="username" name="username" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" required>
-                    </div>
-                    <div>
-                        <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
-                        <input type="password" id="password" name="password" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" required>
-                    </div>
+                    <div><label for="username" class="block text-sm font-medium text-gray-700">Account Name</label><input type="text" id="username" name="username" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md" required></div>
+                    <div><label for="password" class="block text-sm font-medium text-gray-700">Password</label><input type="password" id="password" name="password" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md" required></div>
                     <p id="login-error" class="text-sm text-red-600 hidden">Invalid username or password.</p>
                 </div>
-                <div class="mt-6">
-                    <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                        Login
-                    </button>
-                </div>
+                <div class="mt-6"><button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">Login</button></div>
             </form>
         </div>
     </div>
     
-    <!-- Main Dashboard Content (hidden by default) -->
+    <!-- Main Dashboard Content -->
     <div id="dashboard-content" class="hidden p-4 md:p-8">
         <div class="max-w-7xl mx-auto bg-white rounded-xl shadow-lg p-6 md:p-8 space-y-10">
-            
             <div class="mb-8">
                 <h1 class="text-3xl font-bold text-gray-900">Grupo Bimbo OSA Dashboard</h1>
                 <p class="text-gray-600 mt-1">This report is automatically updated. Data is refreshed each time the page is loaded.</p>
             </div>
-
             <!-- Section 1: Brand-Wise Summary -->
             <div>
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b pb-2 mb-6">
@@ -125,34 +126,22 @@
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 items-end">
                     <div>
-                        <label for="platform" class="block text-sm font-medium text-gray-700 mb-1">Filter Platform</label>
-                        <select id="platform" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 disabled:opacity-50" disabled></select>
+                        <label for="platform" class="block text-sm font-medium text-gray-700 mb-1">Platform</label>
+                        <select id="platform" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg" disabled></select>
                     </div>
-                    <div>
-                        <label for="bgr" class="block text-sm font-medium text-gray-700 mb-1">Filter BGR</label>
-                        <select id="bgr" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 disabled:opacity-50" disabled></select>
-                    </div>
-                    <div class="custom-select-container">
-                        <label for="gc_city_select" class="block text-sm font-medium text-gray-700 mb-1">Filter City</label>
-                        <button id="gc_city_select" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5 text-left flex justify-between items-center disabled:opacity-50" disabled>
-                            <span class="truncate">Select Cities</span>
-                            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                        </button>
-                        <div id="gc_city_options" class="custom-select-options"></div>
-                    </div>
+                    <div id="bgr-multiselect-container"></div>
+                    <div id="city-multiselect-container"></div>
                 </div>
                 <div id="output-brand" class="bg-gray-50 p-4 rounded-lg min-h-[300px] flex items-center justify-center">
-                     <div id="initial-message" class="text-center text-gray-500">
-                        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m-15.357-2a8.001 8.001 0 0115.357-2m0 0H15" /></svg>
+                    <div id="initial-message" class="text-center text-gray-500">
                         <h3 class="mt-2 text-sm font-semibold text-gray-900">Waiting for Login</h3>
                         <p class="mt-1 text-sm text-gray-500">Data will load after successful login.</p>
                     </div>
                 </div>
             </div>
-
             <!-- Section 2: SKU-Level Deep Dive -->
             <div id="sku-section" class="hidden">
-                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b pb-2 mb-6">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b pb-2 mb-6">
                     <h2 class="text-2xl font-bold text-gray-800">SKU-Level Deep Dive</h2>
                     <div id="toggle-sku" class="toggle-container mt-4 md:mt-0">
                         <input type="radio" id="sku-osa-all" name="osaTypeSku" value="all_stores" class="hidden toggle-radio" checked>
@@ -161,157 +150,136 @@
                         <label for="sku-osa-listed" class="toggle-label">OSA (Listed Stores)</label>
                     </div>
                 </div>
-                 <div>
-                    <label for="sku" class="block text-sm font-medium text-gray-700 mb-1">Filter SKU (Title)</label>
-                    <select id="sku" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 disabled:opacity-50" disabled></select>
+                <div id="sku-multiselect-container" class="my-4"></div>
+                <div id="output-sku" class="bg-gray-50 p-4 rounded-lg min-h-[300px] flex items-center justify-center mt-6">
+                    <p class="text-gray-500">Select filters to see the detailed breakdown.</p>
                 </div>
-                 <div id="output-sku" class="bg-gray-50 p-4 rounded-lg min-h-[300px] flex items-center justify-center mt-6">
-                    <p class="text-gray-500">Select an SKU to see the detailed breakdown.</p>
-                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // --- Core Application Elements ---
         const loginOverlay = document.getElementById('login-overlay');
         const loginForm = document.getElementById('login-form');
-        const loginError = document.getElementById('login-error');
         const dashboardContent = document.getElementById('dashboard-content');
-        
         const platformSelect = document.getElementById('platform');
-        const bgrSelect = document.getElementById('bgr');
-        const skuSelect = document.getElementById('sku');
-        const gcCitySelectButton = document.getElementById('gc_city_select');
-        const gcCityOptionsContainer = document.getElementById('gc_city_options');
+        const bgrContainer = document.getElementById('bgr-multiselect-container');
+        const cityContainer = document.getElementById('city-multiselect-container');
+        const skuContainer = document.getElementById('sku-multiselect-container');
         const outputBrandDiv = document.getElementById('output-brand');
         const outputSkuDiv = document.getElementById('output-sku');
         const skuSection = document.getElementById('sku-section');
         const toggleBrandContainer = document.getElementById('toggle-brand');
         const toggleSkuContainer = document.getElementById('toggle-sku');
-
-
-        // --- Data Source ---
+        
         const dataUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSs0rx52hCw6ZQRgnjNgZ6iJHKq6zZoW4-p1kgqYklsHOBOdP9ZExcYtXyZlA81Bu0XAVXfoT3xm6Wm/pub?gid=0&single=true&output=csv';
 
-        // --- Application State ---
-        let baseData = [];
-        let columnKeys = {};
-        let selectedCities = new Set();
+        let baseData = [], columnKeys = {};
+        let selectedCities = new Set(), selectedBgrs = new Set(), selectedSkus = new Set();
         let brandFilteredData = [];
 
-        // --- Event Listeners ---
-        loginForm.addEventListener('submit', handleLogin);
-        platformSelect.addEventListener('change', refreshAllTables);
-        bgrSelect.addEventListener('change', refreshAllTables);
-        skuSelect.addEventListener('change', refreshSkuTable);
-        toggleBrandContainer.addEventListener('change', () => processAndRenderPivot(brandFilteredData, outputBrandDiv, getOsaType('brand')));
-        toggleSkuContainer.addEventListener('change', refreshSkuTable);
-
-
-        gcCitySelectButton.addEventListener('click', () => {
-            if (gcCitySelectButton.disabled) return;
-            gcCityOptionsContainer.style.display = gcCityOptionsContainer.style.display === 'block' ? 'none' : 'block';
-        });
-        document.addEventListener('click', (event) => {
-            const container = document.querySelector('.custom-select-container');
-            if (container && !container.contains(event.target)) {
-                gcCityOptionsContainer.style.display = 'none';
-            }
-        });
-
-        function handleLogin(event) {
-            event.preventDefault();
-            const username = event.target.username.value;
-            const password = event.target.password.value;
-            
-            if (username === 'Grupobimbo' && password === 'Grupobimbo') {
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (e.target.username.value === 'Grupobimbo' && e.target.password.value === 'Grupobimbo') {
                 loginOverlay.classList.add('hidden');
                 dashboardContent.classList.remove('hidden');
                 loadDataFromUrl();
             } else {
-                loginError.classList.remove('hidden');
+                document.getElementById('login-error').classList.remove('hidden');
             }
-        }
+        });
+
+        platformSelect.addEventListener('change', updateDependentFilters);
+        toggleBrandContainer.addEventListener('change', () => processAndRenderPivot(brandFilteredData, outputBrandDiv, getOsaType('brand')));
+        toggleSkuContainer.addEventListener('change', () => refreshSkuTable());
+        
+        // Global click handler to close dropdowns
+        document.addEventListener('click', (e) => {
+            // Find all dropdown containers
+            const allDropdowns = document.querySelectorAll('.searchable-multiselect-container');
+            let clickedInsideA_Dropdown = false;
+            allDropdowns.forEach(container => {
+                if(container.contains(e.target)) {
+                    clickedInsideA_Dropdown = true;
+                }
+            });
+
+            // If the click was not inside any dropdown, close all of them
+            if (!clickedInsideA_Dropdown) {
+                document.querySelectorAll('.searchable-multiselect-options.visible').forEach(panel => {
+                    panel.classList.remove('visible');
+                });
+            }
+        });
+
 
         function loadDataFromUrl() {
-            showLoader(outputBrandDiv, 'Loading live data from Google Sheets...');
-            skuSection.classList.add('hidden');
-
+            showLoader(outputBrandDiv, 'Loading live data...');
             Papa.parse(dataUrl, {
-                download: true,
-                header: true, 
-                skipEmptyLines: true,
+                download: true, header: true, skipEmptyLines: true,
                 complete: (results) => {
                     const headers = results.meta.fields.map(h => h.trim().toLowerCase());
                     columnKeys = {
-                        platform: headers.find(h => h.includes('gc_platform')) || '',
-                        bgr: headers.find(h => h.includes('bgr')) || '',
-                        city: headers.find(h => h.includes('city')) || '',
-                        sku: headers.find(h => h.includes('title')) || '',
-                        time: headers.find(h => h.includes('gc_crawl_time')) || '',
-                        date: headers.find(h => h.includes('report_date')) || '',
-                        available: headers.find(h => h.includes('available_stores')) || '',
-                        listed: headers.find(h => h.includes('listed_stores')) || '',
-                        total: headers.find(h => h.includes('total_stores')) || '',
+                        platform: headers.find(h => h.includes('gc_platform')), bgr: headers.find(h => h.includes('bgr')),
+                        city: headers.find(h => h.includes('city')), sku: headers.find(h => h.includes('title')),
+                        time: headers.find(h => h.includes('gc_crawl_time')), date: headers.find(h => h.includes('report_date')),
+                        available: headers.find(h => h.includes('available_stores')), listed: headers.find(h => h.includes('listed_stores')),
+                        total: headers.find(h => h.includes('total_stores')),
                     };
                     if (!columnKeys.available || !columnKeys.listed || !columnKeys.total) {
-                        showError(outputBrandDiv, "Data source error. Please ensure your sheet has 'AVAILABLE_STORES', 'LISTED_STORES', and 'TOTAL_STORES' columns.");
+                        showError(outputBrandDiv, "Data source error: Missing required store columns.");
                         return;
                     }
-                    const originalHeaders = results.meta.fields;
                     baseData = results.data.map(row => {
                         const cleanedRow = {};
-                        originalHeaders.forEach(header => {
-                             const key = header.trim().toLowerCase();
-                             cleanedRow[key] = row[header] ? row[header].trim() : '';
-                        });
+                        results.meta.fields.forEach(header => cleanedRow[header.trim().toLowerCase()] = row[header]?.trim() || '');
                         return cleanedRow;
                     });
-                    populateBrandFilters();
-                    enableControls();
-                    refreshAllTables();
+                    populatePlatformFilter();
+                    platformSelect.disabled = false;
+                    updateDependentFilters();
                 },
-                error: (error) => showError(outputBrandDiv, "Could not load data from the source link. Check the URL and sharing settings.")
+                error: (err) => showError(outputBrandDiv, "Could not load data. Check Google Sheet URL and sharing settings.")
             });
         }
         
-        function getOsaType(section) { // section is 'brand' or 'sku'
+        function getOsaType(section) {
             const selector = `input[name="osaType${section === 'brand' ? 'Brand' : 'Sku'}"]:checked`;
             return document.querySelector(selector).value;
         }
 
-        function populateBrandFilters() {
-            if (baseData.length === 0) return;
+        function populatePlatformFilter() {
             const platforms = new Set(baseData.map(row => row[columnKeys.platform]));
-            const bgrs = new Set(baseData.map(row => row[columnKeys.bgr]));
-            const cities = new Set(baseData.map(row => row[columnKeys.city]));
             populateSelect(platformSelect, platforms);
-            populateSelect(bgrSelect, bgrs);
-            populateCityMultiSelect(cities);
-            selectedCities = new Set(cities);
-            updateCityButtonText();
         }
 
-        function refreshAllTables() {
-            if (baseData.length === 0) return;
-
+        function updateDependentFilters(){
+            if (!baseData.length) return;
             const selectedPlatform = platformSelect.value;
-            const selectedBgr = bgrSelect.value;
+            const platformFilteredData = baseData.filter(row => row[columnKeys.platform] === selectedPlatform);
+            
+            const bgrs = new Set(platformFilteredData.map(row => row[columnKeys.bgr]));
+            const cities = new Set(platformFilteredData.map(row => row[columnKeys.city]));
+            
+            createSearchableMultiSelect(bgrContainer, 'bgr', 'BGR', bgrs, selectedBgrs, applyBrandFilters);
+            createSearchableMultiSelect(cityContainer, 'city', 'City', cities, selectedCities, applyBrandFilters);
 
-            brandFilteredData = baseData.filter(row =>
-                row[columnKeys.platform] === selectedPlatform &&
-                row[columnKeys.bgr] === selectedBgr &&
+            applyBrandFilters();
+        }
+        
+        function applyBrandFilters(){
+            brandFilteredData = baseData.filter(row => 
+                row[columnKeys.platform] === platformSelect.value &&
+                selectedBgrs.has(row[columnKeys.bgr]) && 
                 selectedCities.has(row[columnKeys.city])
             );
-
-            processAndRenderPivot(brandFilteredData, outputBrandDiv, getOsaType('brand'));
             
-            if(brandFilteredData.length > 0) {
+            processAndRenderPivot(brandFilteredData, outputBrandDiv, getOsaType('brand'));
+
+            if (brandFilteredData.length > 0) {
                 skuSection.classList.remove('hidden');
                 const skus = new Set(brandFilteredData.map(row => row[columnKeys.sku]));
-                populateSelect(skuSelect, skus);
-                skuSelect.disabled = false;
+                createSearchableMultiSelect(skuContainer, 'sku', 'SKU (Title)', skus, selectedSkus, refreshSkuTable);
                 refreshSkuTable();
             } else {
                 skuSection.classList.add('hidden');
@@ -319,161 +287,167 @@
         }
         
         function refreshSkuTable() {
-            const selectedSku = skuSelect.value;
-            const skuFilteredData = brandFilteredData.filter(row => row[columnKeys.sku] === selectedSku);
+            const skuFilteredData = brandFilteredData.filter(row => selectedSkus.has(row[columnKeys.sku]));
             processAndRenderPivot(skuFilteredData, outputSkuDiv, getOsaType('sku'));
         }
 
         function processAndRenderPivot(data, outputElement, osaType) {
-            if (data.length === 0) {
-                showError(outputElement, "No data matches the current filter selection.");
-                return;
-            }
-
-            const pivotData = {};
-            const dates = new Set();
-            const crawlTimes = new Set();
+            if (!data.length) return showError(outputElement, "No data for current filters.");
+            const pivotData = {}, dates = new Set(), crawlTimes = new Set();
             data.forEach(row => {
-                const time = row[columnKeys.time];
-                const date = row[columnKeys.date];
-                const available = parseFloat(row[columnKeys.available]);
-                const listed = parseFloat(row[columnKeys.listed]);
-                const total = parseFloat(row[columnKeys.total]);
-
+                const time = row[columnKeys.time], date = row[columnKeys.date];
+                const available = parseFloat(row[columnKeys.available]), listed = parseFloat(row[columnKeys.listed]), total = parseFloat(row[columnKeys.total]);
                 if (isNaN(available) || isNaN(listed) || isNaN(total) || !time || !date) return;
-                
-                dates.add(date);
-                crawlTimes.add(time);
+                dates.add(date); crawlTimes.add(time);
                 if (!pivotData[time]) pivotData[time] = {};
-                if (!pivotData[time][date]) {
-                    pivotData[time][date] = { available_sum: 0, listed_sum: 0, total_sum: 0 };
-                }
+                if (!pivotData[time][date]) pivotData[time][date] = { available_sum: 0, listed_sum: 0, total_sum: 0 };
                 pivotData[time][date].available_sum += available;
                 pivotData[time][date].listed_sum += listed;
                 pivotData[time][date].total_sum += total;
             });
             const sortedDates = Array.from(dates).sort((a, b) => parseDate(a) - parseDate(b));
             const sortedCrawlTimes = Array.from(crawlTimes).sort((a, b) => convertTimeTo24Hour(a) - convertTimeTo24Hour(b));
-            if (sortedDates.length === 0 || sortedCrawlTimes.length === 0){
-                showError(outputElement, "Could not generate pivot table. Check if date/time columns have valid data.");
-                return;
-            }
+            if (!sortedDates.length || !sortedCrawlTimes.length) return showError(outputElement, "No valid date/time data for pivot table.");
             renderPivotTable(pivotData, sortedDates, sortedCrawlTimes, outputElement, osaType);
         }
 
         function renderPivotTable(pivotData, sortedDates, sortedCrawlTimes, outputElement, osaType) {
             let tableHtml = `<div class="overflow-x-auto"><table class="min-w-full divide-y divide-gray-300">`;
-            tableHtml += `<thead class="bg-gray-50"><tr><th scope="col" class="sticky left-0 bg-gray-50 z-10 py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Crawl Time</th>`;
-            sortedDates.forEach(date => {
-                tableHtml += `<th scope="col" class="px-3 py-3.5 text-center text-sm font-semibold text-gray-900">${date}</th>`;
-            });
-            tableHtml += `<th scope="col" class="sticky right-0 bg-gray-50 z-10 py-3.5 pl-3 pr-4 text-center text-sm font-semibold text-gray-900 sm:pr-6">Grand Total</th></tr></thead>`;
-            
+            tableHtml += `<thead class="bg-gray-50"><tr><th class="sticky left-0 bg-gray-50 z-10 py-3.5 pl-4 pr-3 text-left text-sm font-semibold">Crawl Time</th>`;
+            sortedDates.forEach(date => tableHtml += `<th class="px-3 py-3.5 text-center text-sm font-semibold">${date}</th>`);
+            tableHtml += `<th class="sticky right-0 bg-gray-50 z-10 py-3.5 pl-3 pr-4 text-center text-sm font-semibold">Grand Total</th></tr></thead>`;
             tableHtml += `<tbody class="divide-y divide-gray-200 bg-white">`;
-            const dateTotals = {};
-            sortedDates.forEach(d => dateTotals[d] = { available_sum: 0, listed_sum: 0, total_sum: 0 });
-            
+            const dateTotals = {}; sortedDates.forEach(d => dateTotals[d] = { available_sum: 0, listed_sum: 0, total_sum: 0 });
             sortedCrawlTimes.forEach(time => {
-                let rowTotalAvailable = 0, rowTotalListed = 0, rowTotalTotal = 0;
-                tableHtml += `<tr><td class="sticky left-0 bg-white z-10 whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">${time}</td>`;
+                let rowTotals = { available_sum: 0, listed_sum: 0, total_sum: 0 };
+                tableHtml += `<tr><td class="sticky left-0 bg-white z-10 font-medium py-4 pl-4 pr-3 text-sm">${time}</td>`;
                 sortedDates.forEach(date => {
-                    const cell = pivotData[time] && pivotData[time][date];
+                    const cell = pivotData[time]?.[date];
                     if (cell) {
                         const denominator = osaType === 'all_stores' ? cell.total_sum : cell.listed_sum;
                         const avg = denominator > 0 ? (cell.available_sum / denominator) * 100 : 0;
-                        tableHtml += `<td class="whitespace-nowrap px-3 py-4 text-sm text-center text-gray-500">${avg.toFixed(0)}%</td>`;
-                        rowTotalAvailable += cell.available_sum;
-                        rowTotalListed += cell.listed_sum;
-                        rowTotalTotal += cell.total_sum;
-                        dateTotals[date].available_sum += cell.available_sum;
-                        dateTotals[date].listed_sum += cell.listed_sum;
-                        dateTotals[date].total_sum += cell.total_sum;
+                        tableHtml += `<td class="text-center py-4 px-3 text-sm">${avg.toFixed(0)}%</td>`;
+                        Object.keys(rowTotals).forEach(key => {
+                            rowTotals[key] += cell[key];
+                            dateTotals[date][key] += cell[key];
+                        });
                     } else { tableHtml += `<td></td>`; }
                 });
-                const rowDenominator = osaType === 'all_stores' ? rowTotalTotal : rowTotalListed;
-                const rowAvg = rowDenominator > 0 ? (rowTotalAvailable / rowDenominator) * 100 : 0;
-                tableHtml += `<td class="sticky right-0 bg-white z-10 whitespace-nowrap py-4 pl-3 pr-4 text-sm text-center font-semibold text-gray-900 sm:pr-6">${rowAvg.toFixed(0)}%</td></tr>`;
+                const rowDenominator = osaType === 'all_stores' ? rowTotals.total_sum : rowTotals.listed_sum;
+                const rowAvg = rowDenominator > 0 ? (rowTotals.available_sum / rowDenominator) * 100 : 0;
+                tableHtml += `<td class="sticky right-0 bg-white z-10 font-semibold text-center py-4 pl-3 pr-4 text-sm">${rowAvg.toFixed(0)}%</td></tr>`;
             });
-            tableHtml += `</tbody>`;
-
-            tableHtml += `<tfoot class="bg-gray-50"><tr><th scope="row" class="sticky left-0 bg-gray-50 z-10 pl-4 pr-3 pt-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Grand Total</th>`;
-            let overallTotalAvailable = 0, overallTotalListed = 0, overallTotalTotal = 0;
+            tableHtml += `</tbody><tfoot class="bg-gray-50"><tr><th class="sticky left-0 bg-gray-50 z-10 pl-4 pr-3 pt-3 text-left font-semibold text-sm">Grand Total</th>`;
+            let overallTotals = { available_sum: 0, listed_sum: 0, total_sum: 0 };
             sortedDates.forEach(date => {
                 const total = dateTotals[date];
                 const colDenominator = osaType === 'all_stores' ? total.total_sum : total.listed_sum;
                 const avg = total && colDenominator > 0 ? (total.available_sum / colDenominator) * 100 : 0;
-                tableHtml += `<th scope="col" class="px-3 pt-3 text-center text-sm font-semibold text-gray-900">${avg.toFixed(0)}%</th>`;
-                if(total) { 
-                    overallTotalAvailable += total.available_sum; 
-                    overallTotalListed += total.listed_sum;
-                    overallTotalTotal += total.total_sum;
-                }
+                tableHtml += `<th class="text-center px-3 pt-3 font-semibold text-sm">${avg.toFixed(0)}%</th>`;
+                Object.keys(overallTotals).forEach(key => overallTotals[key] += total[key]);
             });
-            const overallDenominator = osaType === 'all_stores' ? overallTotalTotal : overallTotalListed;
-            const overallAvg = overallDenominator > 0 ? (overallTotalAvailable / overallDenominator) * 100 : 0;
-            tableHtml += `<th scope="col" class="sticky right-0 bg-gray-50 z-10 py-3.5 pl-3 pr-4 text-center text-sm font-semibold text-gray-900 sm:pr-6">${overallAvg.toFixed(0)}%</th>`;
+            const overallDenominator = osaType === 'all_stores' ? overallTotals.total_sum : overallTotals.listed_sum;
+            const overallAvg = overallDenominator > 0 ? (overallTotals.available_sum / overallDenominator) * 100 : 0;
+            tableHtml += `<th class="sticky right-0 bg-gray-50 z-10 py-3.5 pl-3 pr-4 text-center font-semibold text-sm">${overallAvg.toFixed(0)}%</th>`;
             tableHtml += `</tr></tfoot></table></div>`;
             outputElement.innerHTML = tableHtml;
         }
 
         // --- UTILITY FUNCTIONS ---
+        function createSearchableMultiSelect(container, id, label, optionsSet, stateSet, changeCallback) {
+            stateSet.clear(); 
+            optionsSet.forEach(opt => { if(opt) stateSet.add(opt) });
+            
+            container.innerHTML = `
+                <div class="searchable-multiselect-container">
+                    <label for="${id}-button" class="block text-sm font-medium text-gray-700 mb-1">Filter ${label}</label>
+                    <button id="${id}-button" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5 text-left flex justify-between items-center">
+                        <span class="truncate">All ${label}s</span>
+                        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                    <div id="${id}-options" class="searchable-multiselect-options">
+                        <input type="text" id="${id}-search" class="search-input" placeholder="Search ${label}s...">
+                        <div id="${id}-options-list" class="options-list"></div>
+                    </div>
+                </div>`;
+
+            const button = document.getElementById(`${id}-button`);
+            const optionsPanel = document.getElementById(`${id}-options`);
+            const searchInput = document.getElementById(`${id}-search`);
+            const optionsList = document.getElementById(`${id}-options-list`);
+            
+            const updateButtonText = () => {
+                const btnText = button.querySelector('span');
+                const totalOptions = new Set(Array.from(optionsSet).filter(Boolean)).size;
+                if (stateSet.size === totalOptions) btnText.textContent = `All ${label}s`;
+                else if (stateSet.size === 0) btnText.textContent = `None Selected`;
+                else if (stateSet.size > 2) btnText.textContent = `${stateSet.size} ${label}s Selected`;
+                else btnText.textContent = Array.from(stateSet).join(', ');
+            };
+
+            const renderOptions = (filter = '') => {
+                optionsList.innerHTML = '';
+                const totalOptions = new Set(Array.from(optionsSet).filter(Boolean)).size;
+
+                const selectAllDiv = document.createElement('div');
+                selectAllDiv.className = 'searchable-multiselect-option font-semibold';
+                selectAllDiv.innerHTML = `<input type="checkbox" value="select-all" ${stateSet.size === totalOptions ? 'checked' : ''}><label class="ml-2 text-sm text-gray-800 w-full">Select All</label>`;
+                selectAllDiv.querySelector('input').addEventListener('change', (e) => {
+                    if (e.target.checked) optionsSet.forEach(opt => stateSet.add(opt));
+                    else stateSet.clear();
+                    renderOptions(searchInput.value);
+                    updateButtonText();
+                    changeCallback();
+                });
+                optionsList.appendChild(selectAllDiv);
+
+                Array.from(optionsSet).sort().forEach(opt => {
+                    if (opt && opt.toLowerCase().includes(filter.toLowerCase())) {
+                        const optionDiv = document.createElement('div');
+                        optionDiv.className = 'searchable-multiselect-option';
+                        optionDiv.innerHTML = `<input type="checkbox" value="${opt}" ${stateSet.has(opt) ? 'checked' : ''}><label class="ml-2 text-sm text-gray-800 w-full">${opt}</label>`;
+                        optionDiv.querySelector('input').addEventListener('change', (e) => {
+                            if (e.target.checked) stateSet.add(e.target.value);
+                            else stateSet.delete(e.target.value);
+                            
+                            const allCheckbox = optionsList.querySelector('input[value="select-all"]');
+                            if(allCheckbox) allCheckbox.checked = (stateSet.size === totalOptions);
+
+                            updateButtonText();
+                            changeCallback();
+                        });
+                        optionsList.appendChild(optionDiv);
+                    }
+                });
+            };
+
+            button.addEventListener('click', (e) => {
+                e.stopPropagation();
+                 // Close all other dropdowns first
+                document.querySelectorAll('.searchable-multiselect-options.visible').forEach(panel => {
+                    if (panel.id !== optionsPanel.id) {
+                        panel.classList.remove('visible');
+                    }
+                });
+                // Then toggle the current one
+                optionsPanel.classList.toggle('visible');
+            });
+            searchInput.addEventListener('keyup', (e) => renderOptions(e.target.value));
+            
+            updateButtonText();
+            renderOptions();
+        }
+
         function populateSelect(selectElement, optionsSet) {
-            const oldValue = selectElement.value;
             selectElement.innerHTML = '';
             Array.from(optionsSet).sort().forEach(option => {
-                if(option){
+                if (option) {
                     const opt = document.createElement('option'); opt.value = option; opt.textContent = option; selectElement.appendChild(opt);
                 }
             });
-            if(Array.from(optionsSet).includes(oldValue)) selectElement.value = oldValue;
-        }
-        function populateCityMultiSelect(citiesSet) {
-            gcCityOptionsContainer.innerHTML = '';
-            const allOption = createCityCheckbox('Select All', 'select-all', true);
-            allOption.querySelector('input').addEventListener('change', (e) => {
-                const isChecked = e.target.checked;
-                document.querySelectorAll('#gc_city_options input[type="checkbox"]').forEach(cb => { cb.checked = isChecked; });
-                selectedCities = isChecked ? new Set(Array.from(citiesSet).filter(Boolean)) : new Set();
-                updateCityButtonText(); refreshAllTables();
-            });
-            gcCityOptionsContainer.appendChild(allOption);
-            Array.from(citiesSet).sort().forEach(city => {
-                if(city){
-                    const cityCheckbox = createCityCheckbox(city, `city-${city}`, true);
-                    cityCheckbox.querySelector('input').addEventListener('change', handleCitySelection);
-                    gcCityOptionsContainer.appendChild(cityCheckbox);
-                }
-            });
-        }
-        function createCityCheckbox(text, id, isChecked){
-            const optionDiv = document.createElement('div'); optionDiv.className = 'custom-select-option';
-            const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.id = id; checkbox.value = text; checkbox.checked = isChecked;
-            const label = document.createElement('label'); label.htmlFor = id; label.textContent = text; label.className = "ml-2 text-sm text-gray-800 cursor-pointer w-full";
-            optionDiv.appendChild(checkbox); optionDiv.appendChild(label);
-            return optionDiv;
-        }
-        function handleCitySelection(event) {
-            const cityValue = event.target.value;
-            if (event.target.checked) selectedCities.add(cityValue); else selectedCities.delete(cityValue);
-            const allCheckbox = document.getElementById('select-all');
-            if(!event.target.checked) allCheckbox.checked = false;
-            const totalCities = new Set(baseData.map(r => r[columnKeys.city]).filter(Boolean)).size;
-            if(selectedCities.size === totalCities) allCheckbox.checked = true;
-            updateCityButtonText(); refreshAllTables();
-        }
-        function updateCityButtonText() {
-            const button = gcCitySelectButton.querySelector('span');
-            const totalCities = new Set(baseData.map(row => row[columnKeys.city]).filter(Boolean)).size;
-            if (selectedCities.size === 0) button.textContent = 'None selected';
-            else if (selectedCities.size === totalCities) button.textContent = 'All Cities';
-            else if (selectedCities.size > 2) button.textContent = `${selectedCities.size} cities selected`;
-            else button.textContent = Array.from(selectedCities).join(', ');
-        }
-        function enableControls() {
-            [platformSelect, bgrSelect, gcCitySelectButton].forEach(el => el.disabled = false);
         }
         function parseDate(dateString) {
-            if(!dateString) return null;
+            if (!dateString) return null;
             const parts = dateString.match(/(\d+)/g); if (!parts || parts.length < 3) return null;
             let day = parseInt(parts[0], 10), month = parseInt(parts[1], 10) - 1, year = parseInt(parts[2], 10);
             if (year < 100) year += 2000;
