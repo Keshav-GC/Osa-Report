@@ -474,17 +474,26 @@
             });
         }
 
-        // MODIFICATION: Replaced with a more robust date parsing function
+        // MODIFICATION: Replaced with an even more robust date parsing function
         function parseDate(dateString) {
             if (!dateString) return null;
 
-            // Map for month abbreviations to their index (0-11)
+            // 1. Try to parse YYYY-MM-DD format (most specific)
+            const ymdMatch = dateString.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            if (ymdMatch) {
+                const year = parseInt(ymdMatch[1], 10);
+                const month = parseInt(ymdMatch[2], 10) - 1; // Month is 0-indexed
+                const day = parseInt(ymdMatch[3], 10);
+                if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
+                    return new Date(Date.UTC(year, month, day));
+                }
+            }
+
+            // 2. Try to parse "DD Mon" format (e.g., "28 Aug", "3rd Sep")
             const monthMap = {
                 'jan': 0, 'feb': 1, 'mar': 2, 'apr': 3, 'may': 4, 'jun': 5,
                 'jul': 6, 'aug': 7, 'sep': 8, 'oct': 9, 'nov': 10, 'dec': 11
             };
-
-            // First, try to parse formats like "28 Aug", "3rd Sep", "1-Sep" etc.
             const dayMonthMatch = dateString.trim().match(/^(\d+)[a-z\s-]*(\w+)/i);
             if (dayMonthMatch) {
                 const day = parseInt(dayMonthMatch[1], 10);
@@ -492,26 +501,34 @@
                 
                 if (!isNaN(day) && monthMap.hasOwnProperty(monthStr)) {
                     const month = monthMap[monthStr];
-                    const year = new Date().getFullYear(); 
+                    const year = new Date().getFullYear(); // Assume current year
                     return new Date(Date.UTC(year, month, day));
                 }
             }
             
-            // Fallback for numeric dates like "28/08/2025" or "28-08-25"
+            // 3. Fallback for numeric DMY formats like "28/08/2025" or "28-08-25"
             const parts = dateString.match(/(\d+)/g); 
             if (parts && parts.length >= 2) {
-                const d = parseInt(parts[0], 10);
-                const m = parseInt(parts[1], 10) - 1;
-                let y;
+                const day = parseInt(parts[0], 10);
+                const month = parseInt(parts[1], 10) - 1;
+                let year;
+
                 if (parts.length >= 3) {
-                    y = parseInt(parts[2], 10);
-                    if (y < 100) y += 2000; // Handle YY format
+                    year = parseInt(parts[2], 10);
+                    if (year < 100) year += 2000; // Handle YY format
                 } else {
-                    y = new Date().getFullYear(); // Assume current year if not provided
+                    year = new Date().getFullYear(); // Assume current year if not provided
                 }
-                if (!isNaN(d) && !isNaN(m) && !isNaN(y)) {
-                    return new Date(Date.UTC(y, m, d));
+
+                if (!isNaN(day) && !isNaN(month) && !isNaN(year) && month >= 0 && month < 12 && day > 0 && day <= 31) {
+                    return new Date(Date.UTC(year, month, day));
                 }
+            }
+
+            // 4. Final attempt using built-in parser for any other valid format
+            const parsedDate = new Date(dateString);
+            if (parsedDate && !isNaN(parsedDate.getTime())) {
+                return new Date(Date.UTC(parsedDate.getUTCFullYear(), parsedDate.getUTCMonth(), parsedDate.getUTCDate()));
             }
 
             return null; // Return null if no format could be parsed
