@@ -91,7 +91,6 @@
 </head>
 <body class="bg-gray-100 text-gray-800">
 
-    <!-- Login Overlay -->
     <div id="login-overlay" class="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-50 p-4">
         <div class="bg-white rounded-lg shadow-2xl p-8 w-full max-w-sm">
             <h2 class="text-2xl font-bold text-center text-gray-900 mb-6">Dashboard Login</h2>
@@ -106,29 +105,24 @@
         </div>
     </div>
     
-    <!-- Main Dashboard Content -->
     <div id="dashboard-content" class="hidden p-4 md:p-8">
         <div class="max-w-7xl mx-auto bg-white rounded-xl shadow-lg p-6 md:p-8 space-y-10">
             <div class="mb-8">
                 <h1 class="text-3xl font-bold text-gray-900">Grupo Bimbo OSA Dashboard</h1>
                 <p class="text-gray-600 mt-1">This report is automatically updated. Data is refreshed each time the page is loaded.</p>
             </div>
-            <!-- Section 1: Brand-Wise Summary -->
             <div>
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b pb-2 mb-6">
-                     <h2 class="text-2xl font-bold text-gray-800">Brand-Wise Summary</h2>
-                     <div id="toggle-brand" class="toggle-container mt-4 md:mt-0">
-                        <input type="radio" id="brand-osa-all" name="osaTypeBrand" value="all_stores" class="hidden toggle-radio" checked>
-                        <label for="brand-osa-all" class="toggle-label">OSA (All Stores)</label>
-                        <input type="radio" id="brand-osa-listed" name="osaTypeBrand" value="listed_stores" class="hidden toggle-radio">
-                        <label for="brand-osa-listed" class="toggle-label">OSA (Listed Stores)</label>
-                    </div>
+                       <h2 class="text-2xl font-bold text-gray-800">Brand-Wise Summary</h2>
+                       <div id="toggle-brand" class="toggle-container mt-4 md:mt-0">
+                           <input type="radio" id="brand-osa-all" name="osaTypeBrand" value="all_stores" class="hidden toggle-radio" checked>
+                           <label for="brand-osa-all" class="toggle-label">OSA (All Stores)</label>
+                           <input type="radio" id="brand-osa-listed" name="osaTypeBrand" value="listed_stores" class="hidden toggle-radio">
+                           <label for="brand-osa-listed" class="toggle-label">OSA (Listed Stores)</label>
+                       </div>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 items-end">
-                    <div>
-                        <label for="platform" class="block text-sm font-medium text-gray-700 mb-1">Platform</label>
-                        <select id="platform" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg" disabled></select>
-                    </div>
+                    <div id="platform-multiselect-container"></div>
                     <div id="bgr-multiselect-container"></div>
                     <div id="city-multiselect-container"></div>
                 </div>
@@ -139,7 +133,6 @@
                     </div>
                 </div>
             </div>
-            <!-- Section 2: SKU-Level Deep Dive -->
             <div id="sku-section" class="hidden">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b pb-2 mb-6">
                     <h2 class="text-2xl font-bold text-gray-800">SKU-Level Deep Dive</h2>
@@ -162,7 +155,8 @@
         const loginOverlay = document.getElementById('login-overlay');
         const loginForm = document.getElementById('login-form');
         const dashboardContent = document.getElementById('dashboard-content');
-        const platformSelect = document.getElementById('platform');
+        // MODIFICATION 2: Replaced platformSelect with platformContainer
+        const platformContainer = document.getElementById('platform-multiselect-container');
         const bgrContainer = document.getElementById('bgr-multiselect-container');
         const cityContainer = document.getElementById('city-multiselect-container');
         const skuContainer = document.getElementById('sku-multiselect-container');
@@ -175,7 +169,8 @@
         const dataUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSs0rx52hCw6ZQRgnjNgZ6iJHKq6zZoW4-p1kgqYklsHOBOdP9ZExcYtXyZlA81Bu0XAVXfoT3xm6Wm/pub?gid=0&single=true&output=csv';
 
         let baseData = [], columnKeys = {};
-        let selectedCities = new Set(), selectedBgrs = new Set(), selectedSkus = new Set();
+        // MODIFICATION 3: Added selectedPlatforms Set to store selections
+        let selectedPlatforms = new Set(), selectedCities = new Set(), selectedBgrs = new Set(), selectedSkus = new Set();
         let brandFilteredData = [];
 
         loginForm.addEventListener('submit', (e) => {
@@ -189,7 +184,8 @@
             }
         });
 
-        platformSelect.addEventListener('change', updateDependentFilters);
+        // MODIFICATION 4: Removed the event listener for the old select dropdown
+        // platformSelect.addEventListener('change', updateDependentFilters);
         toggleBrandContainer.addEventListener('change', () => processAndRenderPivot(brandFilteredData, outputBrandDiv, getOsaType('brand')));
         toggleSkuContainer.addEventListener('change', () => refreshSkuTable());
         
@@ -235,8 +231,11 @@
                         results.meta.fields.forEach(header => cleanedRow[header.trim().toLowerCase()] = row[header]?.trim() || '');
                         return cleanedRow;
                     });
-                    populatePlatformFilter();
-                    platformSelect.disabled = false;
+                    
+                    // MODIFICATION 5: Create the platform multi-select instead of populating a dropdown
+                    const platforms = new Set(baseData.map(row => row[columnKeys.platform]));
+                    createSearchableMultiSelect(platformContainer, 'platform', 'Platform', platforms, selectedPlatforms, updateDependentFilters);
+                    
                     updateDependentFilters();
                 },
                 error: (err) => showError(outputBrandDiv, "Could not load data. Check Google Sheet URL and sharing settings.")
@@ -248,15 +247,18 @@
             return document.querySelector(selector).value;
         }
 
+        // MODIFICATION 6: This function is no longer needed
+        /*
         function populatePlatformFilter() {
             const platforms = new Set(baseData.map(row => row[columnKeys.platform]));
             populateSelect(platformSelect, platforms);
         }
+        */
 
         function updateDependentFilters(){
             if (!baseData.length) return;
-            const selectedPlatform = platformSelect.value;
-            const platformFilteredData = baseData.filter(row => row[columnKeys.platform] === selectedPlatform);
+            // MODIFICATION 7: Filter data based on the selectedPlatforms Set
+            const platformFilteredData = baseData.filter(row => selectedPlatforms.has(row[columnKeys.platform]));
             
             const bgrs = new Set(platformFilteredData.map(row => row[columnKeys.bgr]));
             const cities = new Set(platformFilteredData.map(row => row[columnKeys.city]));
@@ -268,8 +270,9 @@
         }
         
         function applyBrandFilters(){
+            // MODIFICATION 8: Update filter logic to use the selectedPlatforms Set
             brandFilteredData = baseData.filter(row => 
-                row[columnKeys.platform] === platformSelect.value &&
+                selectedPlatforms.has(row[columnKeys.platform]) &&
                 selectedBgrs.has(row[columnKeys.bgr]) && 
                 selectedCities.has(row[columnKeys.city])
             );
@@ -360,7 +363,7 @@
             
             container.innerHTML = `
                 <div class="searchable-multiselect-container">
-                    <label for="${id}-button" class="block text-sm font-medium text-gray-700 mb-1">Filter ${label}</label>
+                    <label for="${id}-button" class="block text-sm font-medium text-gray-700 mb-1">${label}</label>
                     <button id="${id}-button" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5 text-left flex justify-between items-center">
                         <span class="truncate">All ${label}s</span>
                         <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
