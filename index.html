@@ -150,7 +150,7 @@
                     </div>
                 </div>
                 <div id="sku-multiselect-container" class="my-4"></div>
-                 <div id="sku-legend" class="hidden justify-end items-center space-x-4 mb-2 text-sm">
+                <div id="sku-legend" class="hidden justify-end items-center space-x-4 mb-2 text-sm">
                     <span class="font-medium">Legend:</span>
                     <span class="text-red-600 font-semibold">&lt;50%</span>
                     <div class="w-24 h-4 rounded-md" style="background: linear-gradient(to right, hsl(0, 90%, 85%), hsl(60, 90%, 85%), hsl(120, 90%, 85%));"></div>
@@ -290,7 +290,6 @@
 
         function processAndRenderPivot(data, outputElement, osaType) {
             if (!data.length) {
-                // Also hide legend if no data
                 const legendId = outputElement.id === 'output-brand' ? 'brand-legend' : 'sku-legend';
                 document.getElementById(legendId).classList.add('hidden');
                 return showError(outputElement, "No data for current filters.");
@@ -316,7 +315,6 @@
                 return showError(outputElement, "No valid date/time data for pivot table.");
             }
 
-            // Show legend if there is data
             document.getElementById(legendId).classList.remove('hidden');
             document.getElementById(legendId).classList.add('flex');
 
@@ -324,22 +322,19 @@
             renderPivotTable(pivotData, sortedDates, sortedCrawlTimes, outputElement, osaType);
         }
 
-        // MODIFICATION: Added function to get gradient color
         function getGradientColor(percentage) {
-            if (percentage === null || isNaN(percentage)) return '#ffffff'; // Default color for empty cells
+            if (percentage === null || isNaN(percentage)) return '#ffffff';
             if (percentage < 0) percentage = 0;
             if (percentage > 100) percentage = 100;
 
-            // This creates a linear gradient from Red (hue=0) to Green (hue=120)
             const hue = (percentage / 100) * 120;
             const saturation = '90%';
-            const lightness = '85%'; // Using a light pastel shade for background
+            const lightness = '85%';
             
             return `hsl(${hue}, ${saturation}, ${lightness})`;
         }
 
 
-        // MODIFICATION: Updated renderPivotTable to apply colors
         function renderPivotTable(pivotData, sortedDates, sortedCrawlTimes, outputElement, osaType) {
             let tableHtml = `<div class="overflow-x-auto"><table class="min-w-full divide-y divide-gray-300">`;
             tableHtml += `<thead class="bg-gray-50"><tr><th class="sticky left-0 bg-gray-50 z-10 py-3.5 pl-4 pr-3 text-left text-sm font-semibold">Crawl Time</th>`;
@@ -478,13 +473,50 @@
                 }
             });
         }
+
+        // MODIFICATION: Replaced with a more robust date parsing function
         function parseDate(dateString) {
             if (!dateString) return null;
-            const parts = dateString.match(/(\d+)/g); if (!parts || parts.length < 3) return null;
-            let day = parseInt(parts[0], 10), month = parseInt(parts[1], 10) - 1, year = parseInt(parts[2], 10);
-            if (year < 100) year += 2000;
-            return new Date(Date.UTC(year, month, day));
+
+            // Map for month abbreviations to their index (0-11)
+            const monthMap = {
+                'jan': 0, 'feb': 1, 'mar': 2, 'apr': 3, 'may': 4, 'jun': 5,
+                'jul': 6, 'aug': 7, 'sep': 8, 'oct': 9, 'nov': 10, 'dec': 11
+            };
+
+            // First, try to parse formats like "28 Aug", "3rd Sep", "1-Sep" etc.
+            const dayMonthMatch = dateString.trim().match(/^(\d+)[a-z\s-]*(\w+)/i);
+            if (dayMonthMatch) {
+                const day = parseInt(dayMonthMatch[1], 10);
+                const monthStr = dayMonthMatch[2].substring(0, 3).toLowerCase();
+                
+                if (!isNaN(day) && monthMap.hasOwnProperty(monthStr)) {
+                    const month = monthMap[monthStr];
+                    const year = new Date().getFullYear(); 
+                    return new Date(Date.UTC(year, month, day));
+                }
+            }
+            
+            // Fallback for numeric dates like "28/08/2025" or "28-08-25"
+            const parts = dateString.match(/(\d+)/g); 
+            if (parts && parts.length >= 2) {
+                const d = parseInt(parts[0], 10);
+                const m = parseInt(parts[1], 10) - 1;
+                let y;
+                if (parts.length >= 3) {
+                    y = parseInt(parts[2], 10);
+                    if (y < 100) y += 2000; // Handle YY format
+                } else {
+                    y = new Date().getFullYear(); // Assume current year if not provided
+                }
+                if (!isNaN(d) && !isNaN(m) && !isNaN(y)) {
+                    return new Date(Date.UTC(y, m, d));
+                }
+            }
+
+            return null; // Return null if no format could be parsed
         }
+        
         function convertTimeTo24Hour(timeStr) {
             if (!timeStr) return 9999;
             const lower = timeStr.toLowerCase(); let hours = parseInt(lower.replace(/[^0-9]/g, ''), 10);
