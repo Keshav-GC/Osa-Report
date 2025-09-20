@@ -126,6 +126,12 @@
                     <div id="bgr-multiselect-container"></div>
                     <div id="city-multiselect-container"></div>
                 </div>
+                <div id="brand-legend" class="hidden justify-end items-center space-x-4 mb-2 text-sm">
+                    <span class="font-medium">Legend:</span>
+                    <span class="text-red-600 font-semibold">&lt;50%</span>
+                    <div class="w-24 h-4 rounded-md" style="background: linear-gradient(to right, hsl(0, 90%, 85%), hsl(60, 90%, 85%), hsl(120, 90%, 85%));"></div>
+                    <span class="text-green-600 font-semibold">&gt;80%</span>
+                </div>
                 <div id="output-brand" class="bg-gray-50 p-4 rounded-lg min-h-[300px] flex items-center justify-center">
                     <div id="initial-message" class="text-center text-gray-500">
                         <h3 class="mt-2 text-sm font-semibold text-gray-900">Waiting for Login</h3>
@@ -144,6 +150,12 @@
                     </div>
                 </div>
                 <div id="sku-multiselect-container" class="my-4"></div>
+                 <div id="sku-legend" class="hidden justify-end items-center space-x-4 mb-2 text-sm">
+                    <span class="font-medium">Legend:</span>
+                    <span class="text-red-600 font-semibold">&lt;50%</span>
+                    <div class="w-24 h-4 rounded-md" style="background: linear-gradient(to right, hsl(0, 90%, 85%), hsl(60, 90%, 85%), hsl(120, 90%, 85%));"></div>
+                    <span class="text-green-600 font-semibold">&gt;80%</span>
+                </div>
                 <div id="output-sku" class="bg-gray-50 p-4 rounded-lg min-h-[300px] flex items-center justify-center mt-6">
                     <p class="text-gray-500">Select filters to see the detailed breakdown.</p>
                 </div>
@@ -155,7 +167,6 @@
         const loginOverlay = document.getElementById('login-overlay');
         const loginForm = document.getElementById('login-form');
         const dashboardContent = document.getElementById('dashboard-content');
-        // MODIFICATION 2: Replaced platformSelect with platformContainer
         const platformContainer = document.getElementById('platform-multiselect-container');
         const bgrContainer = document.getElementById('bgr-multiselect-container');
         const cityContainer = document.getElementById('city-multiselect-container');
@@ -169,7 +180,6 @@
         const dataUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSs0rx52hCw6ZQRgnjNgZ6iJHKq6zZoW4-p1kgqYklsHOBOdP9ZExcYtXyZlA81Bu0XAVXfoT3xm6Wm/pub?gid=0&single=true&output=csv';
 
         let baseData = [], columnKeys = {};
-        // MODIFICATION 3: Added selectedPlatforms Set to store selections
         let selectedPlatforms = new Set(), selectedCities = new Set(), selectedBgrs = new Set(), selectedSkus = new Set();
         let brandFilteredData = [];
 
@@ -184,14 +194,10 @@
             }
         });
 
-        // MODIFICATION 4: Removed the event listener for the old select dropdown
-        // platformSelect.addEventListener('change', updateDependentFilters);
         toggleBrandContainer.addEventListener('change', () => processAndRenderPivot(brandFilteredData, outputBrandDiv, getOsaType('brand')));
         toggleSkuContainer.addEventListener('change', () => refreshSkuTable());
         
-        // Global click handler to close dropdowns
         document.addEventListener('click', (e) => {
-            // Find all dropdown containers
             const allDropdowns = document.querySelectorAll('.searchable-multiselect-container');
             let clickedInsideA_Dropdown = false;
             allDropdowns.forEach(container => {
@@ -200,7 +206,6 @@
                 }
             });
 
-            // If the click was not inside any dropdown, close all of them
             if (!clickedInsideA_Dropdown) {
                 document.querySelectorAll('.searchable-multiselect-options.visible').forEach(panel => {
                     panel.classList.remove('visible');
@@ -232,7 +237,6 @@
                         return cleanedRow;
                     });
                     
-                    // MODIFICATION 5: Create the platform multi-select instead of populating a dropdown
                     const platforms = new Set(baseData.map(row => row[columnKeys.platform]));
                     createSearchableMultiSelect(platformContainer, 'platform', 'Platform', platforms, selectedPlatforms, updateDependentFilters);
                     
@@ -247,17 +251,8 @@
             return document.querySelector(selector).value;
         }
 
-        // MODIFICATION 6: This function is no longer needed
-        /*
-        function populatePlatformFilter() {
-            const platforms = new Set(baseData.map(row => row[columnKeys.platform]));
-            populateSelect(platformSelect, platforms);
-        }
-        */
-
         function updateDependentFilters(){
             if (!baseData.length) return;
-            // MODIFICATION 7: Filter data based on the selectedPlatforms Set
             const platformFilteredData = baseData.filter(row => selectedPlatforms.has(row[columnKeys.platform]));
             
             const bgrs = new Set(platformFilteredData.map(row => row[columnKeys.bgr]));
@@ -270,7 +265,6 @@
         }
         
         function applyBrandFilters(){
-            // MODIFICATION 8: Update filter logic to use the selectedPlatforms Set
             brandFilteredData = baseData.filter(row => 
                 selectedPlatforms.has(row[columnKeys.platform]) &&
                 selectedBgrs.has(row[columnKeys.bgr]) && 
@@ -295,7 +289,12 @@
         }
 
         function processAndRenderPivot(data, outputElement, osaType) {
-            if (!data.length) return showError(outputElement, "No data for current filters.");
+            if (!data.length) {
+                // Also hide legend if no data
+                const legendId = outputElement.id === 'output-brand' ? 'brand-legend' : 'sku-legend';
+                document.getElementById(legendId).classList.add('hidden');
+                return showError(outputElement, "No data for current filters.");
+            }
             const pivotData = {}, dates = new Set(), crawlTimes = new Set();
             data.forEach(row => {
                 const time = row[columnKeys.time], date = row[columnKeys.date];
@@ -310,10 +309,37 @@
             });
             const sortedDates = Array.from(dates).sort((a, b) => parseDate(a) - parseDate(b));
             const sortedCrawlTimes = Array.from(crawlTimes).sort((a, b) => convertTimeTo24Hour(a) - convertTimeTo24Hour(b));
-            if (!sortedDates.length || !sortedCrawlTimes.length) return showError(outputElement, "No valid date/time data for pivot table.");
+            
+            const legendId = outputElement.id === 'output-brand' ? 'brand-legend' : 'sku-legend';
+            if (!sortedDates.length || !sortedCrawlTimes.length) {
+                 document.getElementById(legendId).classList.add('hidden');
+                return showError(outputElement, "No valid date/time data for pivot table.");
+            }
+
+            // Show legend if there is data
+            document.getElementById(legendId).classList.remove('hidden');
+            document.getElementById(legendId).classList.add('flex');
+
+
             renderPivotTable(pivotData, sortedDates, sortedCrawlTimes, outputElement, osaType);
         }
 
+        // MODIFICATION: Added function to get gradient color
+        function getGradientColor(percentage) {
+            if (percentage === null || isNaN(percentage)) return '#ffffff'; // Default color for empty cells
+            if (percentage < 0) percentage = 0;
+            if (percentage > 100) percentage = 100;
+
+            // This creates a linear gradient from Red (hue=0) to Green (hue=120)
+            const hue = (percentage / 100) * 120;
+            const saturation = '90%';
+            const lightness = '85%'; // Using a light pastel shade for background
+            
+            return `hsl(${hue}, ${saturation}, ${lightness})`;
+        }
+
+
+        // MODIFICATION: Updated renderPivotTable to apply colors
         function renderPivotTable(pivotData, sortedDates, sortedCrawlTimes, outputElement, osaType) {
             let tableHtml = `<div class="overflow-x-auto"><table class="min-w-full divide-y divide-gray-300">`;
             tableHtml += `<thead class="bg-gray-50"><tr><th class="sticky left-0 bg-gray-50 z-10 py-3.5 pl-4 pr-3 text-left text-sm font-semibold">Crawl Time</th>`;
@@ -321,6 +347,7 @@
             tableHtml += `<th class="sticky right-0 bg-gray-50 z-10 py-3.5 pl-3 pr-4 text-center text-sm font-semibold">Grand Total</th></tr></thead>`;
             tableHtml += `<tbody class="divide-y divide-gray-200 bg-white">`;
             const dateTotals = {}; sortedDates.forEach(d => dateTotals[d] = { available_sum: 0, listed_sum: 0, total_sum: 0 });
+            
             sortedCrawlTimes.forEach(time => {
                 let rowTotals = { available_sum: 0, listed_sum: 0, total_sum: 0 };
                 tableHtml += `<tr><td class="sticky left-0 bg-white z-10 font-medium py-4 pl-4 pr-3 text-sm">${time}</td>`;
@@ -329,16 +356,18 @@
                     if (cell) {
                         const denominator = osaType === 'all_stores' ? cell.total_sum : cell.listed_sum;
                         const avg = denominator > 0 ? (cell.available_sum / denominator) * 100 : 0;
-                        tableHtml += `<td class="text-center py-4 px-3 text-sm">${avg.toFixed(0)}%</td>`;
+                        const color = getGradientColor(avg);
+                        tableHtml += `<td class="text-center py-4 px-3 text-sm" style="background-color: ${color};">${avg.toFixed(0)}%</td>`;
                         Object.keys(rowTotals).forEach(key => {
                             rowTotals[key] += cell[key];
                             dateTotals[date][key] += cell[key];
                         });
-                    } else { tableHtml += `<td></td>`; }
+                    } else { tableHtml += `<td style="background-color: ${getGradientColor(null)};"></td>`; }
                 });
                 const rowDenominator = osaType === 'all_stores' ? rowTotals.total_sum : rowTotals.listed_sum;
                 const rowAvg = rowDenominator > 0 ? (rowTotals.available_sum / rowDenominator) * 100 : 0;
-                tableHtml += `<td class="sticky right-0 bg-white z-10 font-semibold text-center py-4 pl-3 pr-4 text-sm">${rowAvg.toFixed(0)}%</td></tr>`;
+                const rowColor = getGradientColor(rowAvg);
+                tableHtml += `<td class="sticky right-0 bg-white z-10 font-semibold text-center py-4 pl-3 pr-4 text-sm" style="background-color: ${rowColor};">${rowAvg.toFixed(0)}%</td></tr>`;
             });
             tableHtml += `</tbody><tfoot class="bg-gray-50"><tr><th class="sticky left-0 bg-gray-50 z-10 pl-4 pr-3 pt-3 text-left font-semibold text-sm">Grand Total</th>`;
             let overallTotals = { available_sum: 0, listed_sum: 0, total_sum: 0 };
@@ -346,12 +375,14 @@
                 const total = dateTotals[date];
                 const colDenominator = osaType === 'all_stores' ? total.total_sum : total.listed_sum;
                 const avg = total && colDenominator > 0 ? (total.available_sum / colDenominator) * 100 : 0;
-                tableHtml += `<th class="text-center px-3 pt-3 font-semibold text-sm">${avg.toFixed(0)}%</th>`;
+                const colColor = getGradientColor(avg);
+                tableHtml += `<th class="text-center px-3 pt-3 font-semibold text-sm" style="background-color: ${colColor};">${avg.toFixed(0)}%</th>`;
                 Object.keys(overallTotals).forEach(key => overallTotals[key] += total[key]);
             });
             const overallDenominator = osaType === 'all_stores' ? overallTotals.total_sum : overallTotals.listed_sum;
             const overallAvg = overallDenominator > 0 ? (overallTotals.available_sum / overallDenominator) * 100 : 0;
-            tableHtml += `<th class="sticky right-0 bg-gray-50 z-10 py-3.5 pl-3 pr-4 text-center font-semibold text-sm">${overallAvg.toFixed(0)}%</th>`;
+            const overallColor = getGradientColor(overallAvg);
+            tableHtml += `<th class="sticky right-0 bg-gray-50 z-10 py-3.5 pl-3 pr-4 text-center font-semibold text-sm" style="background-color: ${overallColor};">${overallAvg.toFixed(0)}%</th>`;
             tableHtml += `</tr></tfoot></table></div>`;
             outputElement.innerHTML = tableHtml;
         }
@@ -426,13 +457,11 @@
 
             button.addEventListener('click', (e) => {
                 e.stopPropagation();
-                 // Close all other dropdowns first
                 document.querySelectorAll('.searchable-multiselect-options.visible').forEach(panel => {
                     if (panel.id !== optionsPanel.id) {
                         panel.classList.remove('visible');
                     }
                 });
-                // Then toggle the current one
                 optionsPanel.classList.toggle('visible');
             });
             searchInput.addEventListener('keyup', (e) => renderOptions(e.target.value));
