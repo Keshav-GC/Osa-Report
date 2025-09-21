@@ -111,69 +111,42 @@
                 <h1 class="text-3xl font-bold text-gray-900">Grupo Bimbo OSA Dashboard</h1>
                 <p class="text-gray-600 mt-1">This report is automatically updated. Data is refreshed each time the page is loaded.</p>
             </div>
+            
             <div>
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b pb-2 mb-6">
-                       <h2 class="text-2xl font-bold text-gray-800">Brand-Wise Summary</h2>
+                       <h2 class="text-2xl font-bold text-gray-800">OSA Summary</h2>
                        <div class="flex flex-col md:flex-row md:space-x-4 items-end mt-4 md:mt-0">
-                           <div id="toggle-calc-brand" class="toggle-container">
-                               <input type="radio" id="brand-calc-weighted" name="calcTypeBrand" value="weighted" class="hidden toggle-radio" checked>
-                               <label for="brand-calc-weighted" class="toggle-label">Weighted OSA</label>
-                               <input type="radio" id="brand-calc-normal" name="calcTypeBrand" value="normal" class="hidden toggle-radio">
-                               <label for="brand-calc-normal" class="toggle-label">Normal OSA</label>
+                           <div id="toggle-calc" class="toggle-container">
+                               <input type="radio" id="calc-weighted" name="calcType" value="weighted" class="hidden toggle-radio" checked>
+                               <label for="calc-weighted" class="toggle-label">Weighted OSA</label>
+                               <input type="radio" id="calc-normal" name="calcType" value="normal" class="hidden toggle-radio">
+                               <label for="calc-normal" class="toggle-label">Normal OSA</label>
                            </div>
-                           <div id="toggle-scope-brand" class="toggle-container mt-2 md:mt-0">
-                               <input type="radio" id="brand-scope-all" name="scopeTypeBrand" value="all_stores" class="hidden toggle-radio" checked>
-                               <label for="brand-scope-all" class="toggle-label">All Stores</label>
-                               <input type="radio" id="brand-scope-listed" name="scopeTypeBrand" value="listed_stores" class="hidden toggle-radio">
-                               <label for="brand-scope-listed" class="toggle-label">Listed Stores</label>
+                           <div id="toggle-scope" class="toggle-container mt-2 md:mt-0">
+                               <input type="radio" id="scope-all" name="scopeType" value="all_stores" class="hidden toggle-radio" checked>
+                               <label for="scope-all" class="toggle-label">All Stores</label>
+                               <input type="radio" id="scope-listed" name="scopeType" value="listed_stores" class="hidden toggle-radio">
+                               <label for="scope-listed" class="toggle-label">Listed Stores</label>
                            </div>
                        </div>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 items-end">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 items-end">
                     <div id="platform-multiselect-container"></div>
                     <div id="bgr-multiselect-container"></div>
                     <div id="city-multiselect-container"></div>
+                    <div id="sku-multiselect-container"></div>
                 </div>
-                <div id="brand-legend" class="hidden justify-end items-center space-x-4 mb-2 text-sm">
+                <div id="legend" class="hidden justify-end items-center space-x-4 mb-2 text-sm">
                     <span class="font-medium">Legend:</span>
                     <span class="text-red-600 font-semibold">&lt;50%</span>
                     <div class="w-24 h-4 rounded-md" style="background: linear-gradient(to right, hsl(0, 90%, 85%), hsl(60, 90%, 85%), hsl(120, 90%, 85%));"></div>
                     <span class="text-green-600 font-semibold">&gt;80%</span>
                 </div>
-                <div id="output-brand" class="bg-gray-50 p-4 rounded-lg min-h-[300px] flex items-center justify-center">
+                <div id="output-table" class="bg-gray-50 p-4 rounded-lg min-h-[300px] flex items-center justify-center">
                     <div id="initial-message" class="text-center text-gray-500">
                         <h3 class="mt-2 text-sm font-semibold text-gray-900">Waiting for Login</h3>
                         <p class="mt-1 text-sm text-gray-500">Data will load after successful login.</p>
                     </div>
-                </div>
-            </div>
-            <div id="sku-section" class="hidden">
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b pb-2 mb-6">
-                    <h2 class="text-2xl font-bold text-gray-800">SKU-Level Deep Dive</h2>
-                    <div class="flex flex-col md:flex-row md:space-x-4 items-end mt-4 md:mt-0">
-                        <div id="toggle-calc-sku" class="toggle-container">
-                            <input type="radio" id="sku-calc-weighted" name="calcTypeSku" value="weighted" class="hidden toggle-radio" checked>
-                            <label for="sku-calc-weighted" class="toggle-label">Weighted OSA</label>
-                            <input type="radio" id="sku-calc-normal" name="calcTypeSku" value="normal" class="hidden toggle-radio">
-                            <label for="sku-calc-normal" class="toggle-label">Normal OSA</label>
-                        </div>
-                        <div id="toggle-scope-sku" class="toggle-container mt-2 md:mt-0">
-                            <input type="radio" id="sku-scope-all" name="scopeTypeSku" value="all_stores" class="hidden toggle-radio" checked>
-                            <label for="sku-scope-all" class="toggle-label">All Stores</label>
-                            <input type="radio" id="sku-scope-listed" name="scopeTypeSku" value="listed_stores" class="hidden toggle-radio">
-                            <label for="sku-scope-listed" class="toggle-label">Listed Stores</label>
-                        </div>
-                    </div>
-                </div>
-                <div id="sku-multiselect-container" class="my-4"></div>
-                <div id="sku-legend" class="hidden justify-end items-center space-x-4 mb-2 text-sm">
-                    <span class="font-medium">Legend:</span>
-                    <span class="text-red-600 font-semibold">&lt;50%</span>
-                    <div class="w-24 h-4 rounded-md" style="background: linear-gradient(to right, hsl(0, 90%, 85%), hsl(60, 90%, 85%), hsl(120, 90%, 85%));"></div>
-                    <span class="text-green-600 font-semibold">&gt;80%</span>
-                </div>
-                <div id="output-sku" class="bg-gray-50 p-4 rounded-lg min-h-[300px] flex items-center justify-center mt-6">
-                    <p class="text-gray-500">Select filters to see the detailed breakdown.</p>
                 </div>
             </div>
         </div>
@@ -187,15 +160,15 @@
         const bgrContainer = document.getElementById('bgr-multiselect-container');
         const cityContainer = document.getElementById('city-multiselect-container');
         const skuContainer = document.getElementById('sku-multiselect-container');
-        const outputBrandDiv = document.getElementById('output-brand');
-        const outputSkuDiv = document.getElementById('output-sku');
-        const skuSection = document.getElementById('sku-section');
+        const outputDiv = document.getElementById('output-table');
+        const toggleCalc = document.getElementById('toggle-calc');
+        const toggleScope = document.getElementById('toggle-scope');
         
         const dataUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSs0rx52hCw6ZQRgnjNgZ6iJHKq6zZoW4-p1kgqYklsHOBOdP9ZExcYtXyZlA81Bu0XAVXfoT3xm6Wm/pub?gid=0&single=true&output=csv';
 
         let baseData = [], columnKeys = {};
         let selectedPlatforms = new Set(), selectedCities = new Set(), selectedBgrs = new Set(), selectedSkus = new Set();
-        let brandFilteredData = [];
+        let activeData = []; // Holds the current data set for re-rendering by toggles
 
         loginForm.addEventListener('submit', (e) => {
             e.preventDefault();
@@ -208,36 +181,9 @@
             }
         });
 
-        // MODIFICATION: Replaced individual listeners with a single, global listener to sync toggles
-        dashboardContent.addEventListener('change', (e) => {
-            // Check if the changed element is one of our toggle radio buttons
-            if (e.target.classList.contains('toggle-radio')) {
-                const name = e.target.name; // e.g., 'calcTypeBrand'
-                const value = e.target.value; // e.g., 'weighted'
-
-                let targetName;
-
-                // Determine the corresponding toggle group in the other section
-                if (name === 'calcTypeBrand') targetName = 'calcTypeSku';
-                else if (name === 'calcTypeSku') targetName = 'calcTypeBrand';
-                else if (name === 'scopeTypeBrand') targetName = 'scopeTypeSku';
-                else if (name === 'scopeTypeSku') targetName = 'scopeTypeBrand';
-                
-                // If a corresponding group exists, update its value
-                if (targetName) {
-                    const targetRadio = document.querySelector(`input[name="${targetName}"][value="${value}"]`);
-                    if (targetRadio) {
-                        targetRadio.checked = true;
-                    }
-                }
-
-                // Re-render both tables to reflect the synchronized change
-                processAndRenderPivot(brandFilteredData, outputBrandDiv);
-                if (!skuSection.classList.contains('hidden')) {
-                    refreshSkuTable();
-                }
-            }
-        });
+        // Toggles will re-process the last filtered data set
+        toggleCalc.addEventListener('change', () => processAndRenderPivot(activeData, outputDiv));
+        toggleScope.addEventListener('change', () => processAndRenderPivot(activeData, outputDiv));
         
         document.addEventListener('click', (e) => {
             const allDropdowns = document.querySelectorAll('.searchable-multiselect-container');
@@ -251,7 +197,7 @@
         });
 
         function loadDataFromUrl() {
-            showLoader(outputBrandDiv, 'Loading live data...');
+            showLoader(outputDiv, 'Loading live data...');
             Papa.parse(dataUrl, {
                 download: true, header: true, skipEmptyLines: true,
                 complete: (results) => {
@@ -270,10 +216,10 @@
                         listed_osaxsales: headers.find(h => h === 'listed_osaxsales'),
                         sales: headers.find(h => h === 'sales')
                     };
-                    const requiredKeys = ['available', 'listed', 'total', 'osaxsales', 'listed_osaxsales', 'sales'];
+                    const requiredKeys = ['platform', 'bgr', 'city', 'sku', 'available', 'listed', 'total', 'osaxsales', 'listed_osaxsales', 'sales'];
                     const missingKeys = requiredKeys.filter(k => !columnKeys[k]);
                     if (missingKeys.length > 0) {
-                        showError(outputBrandDiv, `Data source error: Missing required columns: ${missingKeys.join(', ')}. Please check sheet for exact names.`);
+                        showError(outputDiv, `Data source error: Missing required columns: ${missingKeys.join(', ')}. Please check sheet for exact names.`);
                         return;
                     }
 
@@ -283,59 +229,61 @@
                         return cleanedRow;
                     });
                     
-                    const platforms = new Set(baseData.map(row => row[columnKeys.platform]));
-                    createSearchableMultiSelect(platformContainer, 'platform', 'Platform', platforms, selectedPlatforms, updateDependentFilters);
-                    updateDependentFilters();
+                    initializeFilters();
                 },
-                error: (err) => showError(outputBrandDiv, "Could not load data. Check Google Sheet URL and sharing settings.")
+                error: (err) => showError(outputDiv, "Could not load data. Check Google Sheet URL and sharing settings.")
             });
         }
         
-        function getCalcType(section) {
-            const selector = `input[name="calcType${section === 'brand' ? 'Brand' : 'Sku'}"]:checked`;
-            return document.querySelector(selector).value;
+        function getCalcType() {
+            return document.querySelector('input[name="calcType"]:checked').value;
         }
-        function getScopeType(section) {
-            const selector = `input[name="scopeType${section === 'brand' ? 'Brand' : 'Sku'}"]:checked`;
-            return document.querySelector(selector).value;
+        function getScopeType() {
+            return document.querySelector('input[name="scopeType"]:checked').value;
         }
 
-        function updateDependentFilters(){
-            if (!baseData.length) return;
+        // MODIFICATION: Chained filter update functions
+        function initializeFilters() {
+            const platforms = new Set(baseData.map(row => row[columnKeys.platform]));
+            createSearchableMultiSelect(platformContainer, 'platform', 'Platform', platforms, selectedPlatforms, updateBgrAndCityFilters);
+            updateBgrAndCityFilters();
+        }
+
+        function updateBgrAndCityFilters() {
             const platformFilteredData = baseData.filter(row => selectedPlatforms.has(row[columnKeys.platform]));
             const bgrs = new Set(platformFilteredData.map(row => row[columnKeys.bgr]));
             const cities = new Set(platformFilteredData.map(row => row[columnKeys.city]));
-            createSearchableMultiSelect(bgrContainer, 'bgr', 'BGR', bgrs, selectedBgrs, applyBrandFilters);
-            createSearchableMultiSelect(cityContainer, 'city', 'City', cities, selectedCities, applyBrandFilters);
-            applyBrandFilters();
+            
+            createSearchableMultiSelect(bgrContainer, 'bgr', 'BGR', bgrs, selectedBgrs, updateSkuFilter);
+            createSearchableMultiSelect(cityContainer, 'city', 'City', cities, selectedCities, updateSkuFilter);
+            updateSkuFilter();
         }
-        
-        function applyBrandFilters(){
-            brandFilteredData = baseData.filter(row => 
+
+        function updateSkuFilter() {
+            const brandFilteredData = baseData.filter(row => 
                 selectedPlatforms.has(row[columnKeys.platform]) &&
                 selectedBgrs.has(row[columnKeys.bgr]) && 
                 selectedCities.has(row[columnKeys.city])
             );
-            processAndRenderPivot(brandFilteredData, outputBrandDiv);
-            if (brandFilteredData.length > 0) {
-                skuSection.classList.remove('hidden');
-                const skus = new Set(brandFilteredData.map(row => row[columnKeys.sku]));
-                createSearchableMultiSelect(skuContainer, 'sku', 'SKU (Title)', skus, selectedSkus, refreshSkuTable);
-                refreshSkuTable();
-            } else {
-                skuSection.classList.add('hidden');
-            }
+            const skus = new Set(brandFilteredData.map(row => row[columnKeys.sku]));
+            createSearchableMultiSelect(skuContainer, 'sku', 'SKU (Title)', skus, selectedSkus, renderFinalTable);
+            renderFinalTable();
         }
         
-        function refreshSkuTable() {
-            const skuFilteredData = brandFilteredData.filter(row => selectedSkus.has(row[columnKeys.sku]));
-            processAndRenderPivot(skuFilteredData, outputSkuDiv);
+        function renderFinalTable() {
+            activeData = baseData.filter(row => 
+                selectedPlatforms.has(row[columnKeys.platform]) &&
+                selectedBgrs.has(row[columnKeys.bgr]) && 
+                selectedCities.has(row[columnKeys.city]) &&
+                selectedSkus.has(row[columnKeys.sku])
+            );
+            processAndRenderPivot(activeData, outputDiv);
         }
 
         function processAndRenderPivot(data, outputElement) {
-            const legendId = outputElement.id.includes('brand') ? 'brand-legend' : 'sku-legend';
-            if (!data.length) {
-                document.getElementById(legendId).classList.add('hidden');
+            const legend = document.getElementById('legend');
+            if (!data || !data.length) {
+                legend.classList.add('hidden');
                 return showError(outputElement, "No data for current filters.");
             }
             const pivotData = {}, dates = new Set(), crawlTimes = new Set();
@@ -348,14 +296,8 @@
 
             data.forEach(row => {
                 const time = row[columnKeys.time], date = row[columnKeys.date];
-                
-                const available = cleanAndParseFloat(row[columnKeys.available]);
-                const listed = cleanAndParseFloat(row[columnKeys.listed]);
-                const total = cleanAndParseFloat(row[columnKeys.total]);
-                const osaxsales = cleanAndParseFloat(row[columnKeys.osaxsales]);
-                const listed_osaxsales = cleanAndParseFloat(row[columnKeys.listed_osaxsales]);
-                const sales = cleanAndParseFloat(row[columnKeys.sales]);
-                
+                const available = cleanAndParseFloat(row[columnKeys.available]), listed = cleanAndParseFloat(row[columnKeys.listed]), total = cleanAndParseFloat(row[columnKeys.total]);
+                const osaxsales = cleanAndParseFloat(row[columnKeys.osaxsales]), listed_osaxsales = cleanAndParseFloat(row[columnKeys.listed_osaxsales]), sales = cleanAndParseFloat(row[columnKeys.sales]);
                 if (!time || !date || isNaN(available) || isNaN(listed) || isNaN(total) || isNaN(osaxsales) || isNaN(listed_osaxsales) || isNaN(sales)) return;
                 
                 dates.add(date); crawlTimes.add(time);
@@ -374,14 +316,13 @@
             const sortedCrawlTimes = Array.from(crawlTimes).sort((a, b) => convertTimeTo24Hour(a) - convertTimeTo24Hour(b));
             
             if (!sortedDates.length || !sortedCrawlTimes.length) {
-                document.getElementById(legendId).classList.add('hidden');
+                legend.classList.add('hidden');
                 return showError(outputElement, "No valid date/time data for pivot table.");
             }
 
-            document.getElementById(legendId).classList.remove('hidden');
-            document.getElementById(legendId).classList.add('flex');
-            const section = outputElement.id.includes('brand') ? 'brand' : 'sku';
-            renderPivotTable(pivotData, sortedDates, sortedCrawlTimes, outputElement, getCalcType(section), getScopeType(section));
+            legend.classList.remove('hidden');
+            legend.classList.add('flex');
+            renderPivotTable(pivotData, sortedDates, sortedCrawlTimes, outputElement, getCalcType(), getScopeType());
         }
 
         function getGradientColor(percentage) {
