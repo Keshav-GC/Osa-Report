@@ -256,7 +256,6 @@
             }
         });
         
-        // MODIFICATION: Download button listeners
         downloadSummaryBtn.addEventListener('click', () => downloadCsv(summaryTableCsvData, 'Platform_Summary.csv'));
         downloadDetailBtn.addEventListener('click', () => downloadCsv(detailedTableCsvData, 'Detailed_Breakdown.csv'));
 
@@ -351,12 +350,12 @@
 
         function displayPlatformSummaryPivot(pivotData, sortedPlatforms, sortedTimes, sortedDates, outputElement, calcType, scopeType) {
             let csvRows = [];
-            const headerRow = ['Platform', 'Time Slot', ...sortedDates, 'Grand Total'];
+            const headerRow = ['Platform', 'Time Slot', ...sortedDates.map(d => d.toDateString()), 'Grand Total'];
             csvRows.push(headerRow);
 
             let tableHtml = `<div class="overflow-x-auto"><table class="min-w-full divide-y divide-gray-300">`;
             tableHtml += `<thead class="bg-gray-50"><tr><th class="sticky left-0 bg-gray-50 z-10 py-3.5 pl-4 pr-3 text-left text-sm font-semibold">Platform</th><th class="px-3 py-3.5 text-left text-sm font-semibold">Time Slot</th>`;
-            sortedDates.forEach(d => tableHtml += `<th class="px-3 py-3.5 text-center text-sm font-semibold">${d}</th>`);
+            sortedDates.forEach(d => tableHtml += `<th class="px-3 py-3.5 text-center text-sm font-semibold">${d.toLocaleDateString()}</th>`);
             tableHtml += `<th class="sticky right-0 bg-gray-50 z-10 py-3.5 pl-3 pr-4 text-center text-sm font-semibold">Grand Total</th></tr></thead>`;
             tableHtml += `<tbody class="bg-white">`;
 
@@ -381,12 +380,11 @@
                     sortedTimes.forEach((time, timeIndex) => {
                         let rowTotals = { available_sum: 0, listed_sum: 0, total_sum: 0, osaxsales_sum: 0, listed_osaxsales_sum: 0, sales_sum: 0 };
                         let csvRow = [platform, time];
-
                         tableHtml += `<tr class="${index % 2 === 0 ? '' : 'bg-gray-50'}">`;
                         if (timeIndex === 0) tableHtml += `<td class="font-medium py-4 pl-4 pr-3 text-sm" rowspan="${sortedTimes.length}">${platform}</td>`;
                         tableHtml += `<td class="px-3 py-4 text-sm text-gray-500">${time}</td>`;
                         sortedDates.forEach(date => {
-                            const cell = pivotData[platform]?.[time]?.[date];
+                            const cell = pivotData[platform]?.[time]?.[date.toLocaleDateString()];
                             if(cell) Object.keys(rowTotals).forEach(key => rowTotals[key] += cell[key]);
                             const avg = calculateAvg(cell);
                             tableHtml += `<td class="text-center py-4 px-3 text-sm" style="background-color: ${getGradientColor(avg)};">${avg.toFixed(0)}%</td>`;
@@ -438,7 +436,7 @@
             const legend = document.getElementById('legend');
             if (!data || !data.length) {
                 legend.classList.add('hidden');
-                detailedTableCsvData = []; // Clear CSV data
+                detailedTableCsvData = [];
                 return showError(outputElement, "No data for current filters.");
             }
             const pivotData = {}, dates = new Set(), crawlTimes = new Set();
@@ -464,7 +462,7 @@
             
             if (!sortedDates.length || !sortedCrawlTimes.length) {
                 legend.classList.add('hidden');
-                detailedTableCsvData = []; // Clear CSV data
+                detailedTableCsvData = [];
                 return showError(outputElement, "No valid date/time data for pivot table.");
             }
 
@@ -548,7 +546,6 @@
             const csvContent = csvData.map(rowArray => {
                 const rowString = rowArray.map(cell => {
                     const cellString = String(cell || '');
-                    // Handle commas, quotes, and newlines in cell data
                     if (cellString.includes(',') || cellString.includes('"') || cellString.includes('\n')) {
                         return `"${cellString.replace(/"/g, '""')}"`;
                     }
