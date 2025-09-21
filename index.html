@@ -190,11 +190,6 @@
         const outputBrandDiv = document.getElementById('output-brand');
         const outputSkuDiv = document.getElementById('output-sku');
         const skuSection = document.getElementById('sku-section');
-
-        const toggleCalcBrand = document.getElementById('toggle-calc-brand');
-        const toggleScopeBrand = document.getElementById('toggle-scope-brand');
-        const toggleCalcSku = document.getElementById('toggle-calc-sku');
-        const toggleScopeSku = document.getElementById('toggle-scope-sku');
         
         const dataUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSs0rx52hCw6ZQRgnjNgZ6iJHKq6zZoW4-p1kgqYklsHOBOdP9ZExcYtXyZlA81Bu0XAVXfoT3xm6Wm/pub?gid=0&single=true&output=csv';
 
@@ -213,10 +208,36 @@
             }
         });
 
-        toggleCalcBrand.addEventListener('change', () => processAndRenderPivot(brandFilteredData, outputBrandDiv));
-        toggleScopeBrand.addEventListener('change', () => processAndRenderPivot(brandFilteredData, outputBrandDiv));
-        toggleCalcSku.addEventListener('change', () => refreshSkuTable());
-        toggleScopeSku.addEventListener('change', () => refreshSkuTable());
+        // MODIFICATION: Replaced individual listeners with a single, global listener to sync toggles
+        dashboardContent.addEventListener('change', (e) => {
+            // Check if the changed element is one of our toggle radio buttons
+            if (e.target.classList.contains('toggle-radio')) {
+                const name = e.target.name; // e.g., 'calcTypeBrand'
+                const value = e.target.value; // e.g., 'weighted'
+
+                let targetName;
+
+                // Determine the corresponding toggle group in the other section
+                if (name === 'calcTypeBrand') targetName = 'calcTypeSku';
+                else if (name === 'calcTypeSku') targetName = 'calcTypeBrand';
+                else if (name === 'scopeTypeBrand') targetName = 'scopeTypeSku';
+                else if (name === 'scopeTypeSku') targetName = 'scopeTypeBrand';
+                
+                // If a corresponding group exists, update its value
+                if (targetName) {
+                    const targetRadio = document.querySelector(`input[name="${targetName}"][value="${value}"]`);
+                    if (targetRadio) {
+                        targetRadio.checked = true;
+                    }
+                }
+
+                // Re-render both tables to reflect the synchronized change
+                processAndRenderPivot(brandFilteredData, outputBrandDiv);
+                if (!skuSection.classList.contains('hidden')) {
+                    refreshSkuTable();
+                }
+            }
+        });
         
         document.addEventListener('click', (e) => {
             const allDropdowns = document.querySelectorAll('.searchable-multiselect-container');
@@ -234,7 +255,6 @@
             Papa.parse(dataUrl, {
                 download: true, header: true, skipEmptyLines: true,
                 complete: (results) => {
-                    // MODIFICATION: Use exact matching for column names to avoid conflicts
                     const headers = results.meta.fields.map(h => h.trim().toLowerCase());
                     columnKeys = {
                         platform: headers.find(h => h === 'gc_platform'),
@@ -389,7 +409,6 @@
                     numerator = totals.available_sum;
                     denominator = (scopeType === 'all_stores') ? totals.total_sum : totals.listed_sum;
                 }
-                // No longer capping the result, as the root cause is fixed.
                 return denominator > 0 ? (numerator / denominator) * 100 : 0;
             };
 
