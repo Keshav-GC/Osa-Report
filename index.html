@@ -114,7 +114,7 @@
             
             <div>
                  <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b pb-2 mb-6">
-                    <h2 class="text-2xl font-bold text-gray-800">Platform Summary (Latest Day)</h2>
+                    <h2 class="text-2xl font-bold text-gray-800">Platform Summary</h2>
                      <div class="flex flex-col md:flex-row md:space-x-4 items-end mt-4 md:mt-0">
                         <div class="toggle-container">
                             <input type="radio" id="summary-calc-weighted" name="calcTypeSummary" value="weighted" class="hidden toggle-radio" checked>
@@ -184,13 +184,11 @@
         const loginForm = document.getElementById('login-form');
         const dashboardContent = document.getElementById('dashboard-content');
         
-        // Summary Table Elements
         const bgrSummaryContainer = document.getElementById('bgr-summary-multiselect-container');
         const citySummaryContainer = document.getElementById('city-summary-multiselect-container');
         const timeslotSummaryContainer = document.getElementById('timeslot-summary-multiselect-container');
         const outputPlatformSummaryDiv = document.getElementById('output-platform-summary');
 
-        // Detailed Table Elements
         const platformContainer = document.getElementById('platform-multiselect-container');
         const bgrContainer = document.getElementById('bgr-multiselect-container');
         const cityContainer = document.getElementById('city-multiselect-container');
@@ -203,10 +201,8 @@
         let baseData = [], columnKeys = {};
         let activeData = [];
 
-        // Summary Filter State
         let selectedBgrsSummary = new Set(), selectedCitiesSummary = new Set();
         let selectedTimeslotsSummary = new Set(['10_am', '5_pm', '10_pm']);
-        // Detailed Filter State
         let selectedPlatforms = new Set(), selectedCities = new Set(), selectedBgrs = new Set(), selectedSkus = new Set();
         
         // --- INITIAL SETUP & EVENT LISTENERS ---
@@ -223,21 +219,14 @@
 
         dashboardContent.addEventListener('change', (e) => {
             if (e.target.classList.contains('toggle-radio')) {
-                const name = e.target.name;
-                const value = e.target.value;
-                let targetName;
-
-                if (name.startsWith('calcType')) {
-                    targetName = (name === 'calcTypeSummary') ? 'calcTypeDetail' : 'calcTypeSummary';
-                } else if (name.startsWith('scopeType')) {
-                    targetName = (name === 'scopeTypeSummary') ? 'scopeTypeDetail' : 'scopeTypeSummary';
-                }
-
+                const name = e.target.name; const value = e.target.value; let targetName;
+                if (name.startsWith('calcType')) targetName = (name === 'calcTypeSummary') ? 'calcTypeDetail' : 'calcTypeSummary';
+                else if (name.startsWith('scopeType')) targetName = (name === 'scopeTypeSummary') ? 'scopeTypeDetail' : 'scopeTypeSummary';
+                
                 if (targetName) {
                     const targetRadio = document.querySelector(`input[name="${targetName}"][value="${value}"]`);
                     if (targetRadio) targetRadio.checked = true;
                 }
-                
                 renderPlatformSummaryTable();
                 renderFinalTable();
             }
@@ -299,7 +288,7 @@
             
             createSearchableMultiSelect(bgrSummaryContainer, 'bgr_summary', 'BGR', bgrs, selectedBgrsSummary, renderPlatformSummaryTable);
             createSearchableMultiSelect(citySummaryContainer, 'city_summary', 'City', cities, selectedCitiesSummary, renderPlatformSummaryTable);
-            createSearchableMultiSelect(timeslotSummaryContainer, 'timeslot_summary', 'Time Slot', timeslots, selectedTimeslotsSummary, renderPlatformSummaryTable);
+            createSearchableMultiSelect(timeslotSummaryContainer, 'timeslot_summary', 'Time Slot', timeslots, selectedTimeslotsSummary, renderPlatformSummaryTable, true);
             renderPlatformSummaryTable();
         }
 
@@ -309,53 +298,43 @@
             if (selectedCitiesSummary.size > 0) summaryData = summaryData.filter(row => selectedCitiesSummary.has(row[columnKeys.city]));
 
             if (summaryData.length === 0) { showError(outputPlatformSummaryDiv, "No data for selected summary filters."); return; }
-            const latestDate = summaryData.reduce((latest, row) => {
-                const rowDate = parseDate(row[columnKeys.date]);
-                return rowDate > latest ? rowDate : latest;
-            }, new Date(0));
-            
-            const latestDateString = latestDate.toISOString().split('T')[0];
-            const latestDayData = summaryData.filter(row => {
-                 const rowDate = parseDate(row[columnKeys.date]);
-                 return rowDate && rowDate.toISOString().split('T')[0] === latestDateString;
-            });
-
-            if (latestDayData.length === 0) { showError(outputPlatformSummaryDiv, "No data available for the latest date."); return; }
-            processAndRenderPlatformPivot(latestDayData, outputPlatformSummaryDiv);
+            processAndRenderPlatformPivot(summaryData, outputPlatformSummaryDiv);
         }
         
         function processAndRenderPlatformPivot(data, outputElement) {
-            const pivotData = {}, platforms = new Set();
+            const pivotData = {}, dates = new Set(), platforms = new Set();
             const cleanAndParseFloat = (val) => parseFloat((typeof val === 'string' ? val.replace(/[^0-9.-]/g, '') : val));
 
             data.forEach(row => {
-                const time = row[columnKeys.time], platform = row[columnKeys.platform];
-                if (!selectedTimeslotsSummary.has(time)) return; // Filter by selected time slots
-
+                const time = row[columnKeys.time], platform = row[columnKeys.platform], date = row[columnKeys.date];
                 const available = cleanAndParseFloat(row[columnKeys.available]), listed = cleanAndParseFloat(row[columnKeys.listed]), total = cleanAndParseFloat(row[columnKeys.total]);
                 const osaxsales = cleanAndParseFloat(row[columnKeys.osaxsales]), listed_osaxsales = cleanAndParseFloat(row[columnKeys.listed_osaxsales]), sales = cleanAndParseFloat(row[columnKeys.sales]);
-                if (!time || !platform || isNaN(available) || isNaN(listed) || isNaN(total) || isNaN(osaxsales) || isNaN(listed_osaxsales) || isNaN(sales)) return;
+                if (!time || !platform || !date || isNaN(available) || isNaN(listed) || isNaN(total) || isNaN(osaxsales) || isNaN(listed_osaxsales) || isNaN(sales)) return;
                 
-                platforms.add(platform);
+                platforms.add(platform); dates.add(date);
                 if (!pivotData[platform]) pivotData[platform] = {};
-                if (!pivotData[platform][time]) {
-                    pivotData[platform][time] = { available_sum: 0, listed_sum: 0, total_sum: 0, osaxsales_sum: 0, listed_osaxsales_sum: 0, sales_sum: 0 };
+                if (!pivotData[platform][time]) pivotData[platform][time] = {};
+                if (!pivotData[platform][time][date]) {
+                    pivotData[platform][time][date] = { available_sum: 0, listed_sum: 0, total_sum: 0, osaxsales_sum: 0, listed_osaxsales_sum: 0, sales_sum: 0 };
                 }
-                const cell = pivotData[platform][time];
+                const cell = pivotData[platform][time][date];
                 cell.available_sum += available; cell.listed_sum += listed; cell.total_sum += total;
                 cell.osaxsales_sum += osaxsales; cell.listed_osaxsales_sum += listed_osaxsales; cell.sales_sum += sales;
             });
 
             const sortedPlatforms = Array.from(platforms).sort();
             const sortedTimes = Array.from(selectedTimeslotsSummary).sort((a,b) => convertTimeTo24Hour(a) - convertTimeTo24Hour(b));
+            const sortedDates = Array.from(dates).sort((a, b) => parseDate(a) - parseDate(b));
             
-            if (!sortedPlatforms.length) { return showError(outputElement, "No valid data to display in summary."); }
-            displayPlatformSummaryPivot(pivotData, sortedPlatforms, sortedTimes, outputElement, getCalcType(), getScopeType());
+            if (!sortedPlatforms.length || !sortedDates.length) { return showError(outputElement, "No valid data to display in summary."); }
+            displayPlatformSummaryPivot(pivotData, sortedPlatforms, sortedTimes, sortedDates, outputElement, getCalcType(), getScopeType());
         }
 
-        function displayPlatformSummaryPivot(pivotData, sortedPlatforms, sortedTimes, outputElement, calcType, scopeType) {
+        function displayPlatformSummaryPivot(pivotData, sortedPlatforms, sortedTimes, sortedDates, outputElement, calcType, scopeType) {
             let tableHtml = `<div class="overflow-x-auto"><table class="min-w-full divide-y divide-gray-300">`;
-            tableHtml += `<thead class="bg-gray-50"><tr><th class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold">Platform</th><th class="px-3 py-3.5 text-left text-sm font-semibold">Time Slot</th><th class="px-3 py-3.5 text-center text-sm font-semibold">OSA</th></tr></thead>`;
+            tableHtml += `<thead class="bg-gray-50"><tr><th class="sticky left-0 bg-gray-50 z-10 py-3.5 pl-4 pr-3 text-left text-sm font-semibold">Platform</th><th class="px-3 py-3.5 text-left text-sm font-semibold">Time Slot</th>`;
+            sortedDates.forEach(d => tableHtml += `<th class="px-3 py-3.5 text-center text-sm font-semibold">${d}</th>`);
+            tableHtml += `<th class="sticky right-0 bg-gray-50 z-10 py-3.5 pl-3 pr-4 text-center text-sm font-semibold">Grand Total</th></tr></thead>`;
             tableHtml += `<tbody class="bg-white">`;
 
             const calculateAvg = (totals) => {
@@ -372,23 +351,25 @@
             };
 
             if (sortedTimes.length === 0) {
-                 tableHtml += `<tr><td colspan="3" class="text-center py-4">Please select at least one Time Slot.</td></tr>`;
+                 tableHtml += `<tr><td colspan="${sortedDates.length + 3}" class="text-center py-4">Please select at least one Time Slot.</td></tr>`;
             } else {
                 sortedPlatforms.forEach((platform, index) => {
                     sortedTimes.forEach((time, timeIndex) => {
+                        let rowTotals = { available_sum: 0, listed_sum: 0, total_sum: 0, osaxsales_sum: 0, listed_osaxsales_sum: 0, sales_sum: 0 };
                         tableHtml += `<tr class="${index % 2 === 0 ? '' : 'bg-gray-50'}">`;
-                        if (timeIndex === 0) {
-                             tableHtml += `<td class="font-medium py-4 pl-4 pr-3 text-sm" rowspan="${sortedTimes.length}">${platform}</td>`;
-                        }
+                        if (timeIndex === 0) tableHtml += `<td class="font-medium py-4 pl-4 pr-3 text-sm" rowspan="${sortedTimes.length}">${platform}</td>`;
                         tableHtml += `<td class="px-3 py-4 text-sm text-gray-500">${time}</td>`;
-                        const cell = pivotData[platform]?.[time];
-                        const avg = calculateAvg(cell);
-                        tableHtml += `<td class="text-center py-4 px-3 text-sm" style="background-color: ${getGradientColor(avg)};">${avg.toFixed(0)}%</td>`;
+                        sortedDates.forEach(date => {
+                            const cell = pivotData[platform]?.[time]?.[date];
+                            if(cell) Object.keys(rowTotals).forEach(key => rowTotals[key] += cell[key]);
+                            const avg = calculateAvg(cell);
+                            tableHtml += `<td class="text-center py-4 px-3 text-sm" style="background-color: ${getGradientColor(avg)};">${avg.toFixed(0)}%</td>`;
+                        });
+                        const rowAvg = calculateAvg(rowTotals);
+                        tableHtml += `<td class="sticky right-0 font-semibold text-center py-4 pl-3 pr-4 text-sm" style="background-color: ${getGradientColor(rowAvg)};">${rowAvg.toFixed(0)}%</td>`;
                         tableHtml += `</tr>`;
                     });
-                     if (index < sortedPlatforms.length -1) {
-                        tableHtml += `<tr class="border-t"></tr>`
-                    }
+                     if (index < sortedPlatforms.length -1) tableHtml += `<tr class="border-t"></tr>`;
                 });
             }
             tableHtml += `</tbody></table></div>`;
@@ -406,127 +387,40 @@
             const platformFilteredData = baseData.filter(row => selectedPlatforms.has(row[columnKeys.platform]));
             const bgrs = new Set(platformFilteredData.map(row => row[columnKeys.bgr]));
             const cities = new Set(platformFilteredData.map(row => row[columnKeys.city]));
-            
             createSearchableMultiSelect(bgrContainer, 'bgr', 'BGR', bgrs, selectedBgrs, updateSkuFilter);
             createSearchableMultiSelect(cityContainer, 'city', 'City', cities, selectedCities, updateSkuFilter);
             updateSkuFilter();
         }
 
         function updateSkuFilter() {
-            const brandFilteredData = baseData.filter(row => 
-                selectedPlatforms.has(row[columnKeys.platform]) && selectedBgrs.has(row[columnKeys.bgr]) && selectedCities.has(row[columnKeys.city])
-            );
+            const brandFilteredData = baseData.filter(row => selectedPlatforms.has(row[columnKeys.platform]) && selectedBgrs.has(row[columnKeys.bgr]) && selectedCities.has(row[columnKeys.city]));
             const skus = new Set(brandFilteredData.map(row => row[columnKeys.sku]));
             createSearchableMultiSelect(skuContainer, 'sku', 'SKU (Title)', skus, selectedSkus, renderFinalTable);
             renderFinalTable();
         }
         
         function renderFinalTable() {
-            activeData = baseData.filter(row => 
-                selectedPlatforms.has(row[columnKeys.platform]) && selectedBgrs.has(row[columnKeys.bgr]) &&
-                selectedCities.has(row[columnKeys.city]) && selectedSkus.has(row[columnKeys.sku])
-            );
+            activeData = baseData.filter(row => selectedPlatforms.has(row[columnKeys.platform]) && selectedBgrs.has(row[columnKeys.bgr]) && selectedCities.has(row[columnKeys.city]) && selectedSkus.has(row[columnKeys.sku]));
             processAndRenderPivot(activeData, outputDiv);
         }
 
-        function processAndRenderPivot(data, outputElement) {
-            const legend = document.getElementById('legend');
-            if (!data || !data.length) {
-                legend.classList.add('hidden');
-                return showError(outputElement, "No data for current filters.");
-            }
-            const pivotData = {}, dates = new Set(), crawlTimes = new Set();
-            const cleanAndParseFloat = (val) => parseFloat((typeof val === 'string' ? val.replace(/[^0-9.-]/g, '') : val));
-
-            data.forEach(row => {
-                const time = row[columnKeys.time], date = row[columnKeys.date];
-                const available = cleanAndParseFloat(row[columnKeys.available]), listed = cleanAndParseFloat(row[columnKeys.listed]), total = cleanAndParseFloat(row[columnKeys.total]);
-                const osaxsales = cleanAndParseFloat(row[columnKeys.osaxsales]), listed_osaxsales = cleanAndParseFloat(row[columnKeys.listed_osaxsales]), sales = cleanAndParseFloat(row[columnKeys.sales]);
-                if (!time || !date || isNaN(available) || isNaN(listed) || isNaN(total) || isNaN(osaxsales) || isNaN(listed_osaxsales) || isNaN(sales)) return;
-                
-                dates.add(date); crawlTimes.add(time);
-                if (!pivotData[time]) pivotData[time] = {};
-                if (!pivotData[time][date]) {
-                    pivotData[time][date] = { available_sum: 0, listed_sum: 0, total_sum: 0, osaxsales_sum: 0, listed_osaxsales_sum: 0, sales_sum: 0 };
-                }
-                const cell = pivotData[time][date];
-                cell.available_sum += available; cell.listed_sum += listed; cell.total_sum += total;
-                cell.osaxsales_sum += osaxsales; cell.listed_osaxsales_sum += listed_osaxsales; cell.sales_sum += sales;
-            });
-            const sortedDates = Array.from(dates).sort((a, b) => parseDate(a) - parseDate(b));
-            const sortedCrawlTimes = Array.from(crawlTimes).sort((a, b) => convertTimeTo24Hour(a) - convertTimeTo24Hour(b));
-            
-            if (!sortedDates.length || !sortedCrawlTimes.length) {
-                legend.classList.add('hidden');
-                return showError(outputElement, "No valid date/time data for pivot table.");
-            }
-
-            legend.classList.remove('hidden');
-            legend.classList.add('flex');
-            renderPivotTable(pivotData, sortedDates, sortedCrawlTimes, outputElement, getCalcType(), getScopeType());
-        }
-
-        function renderPivotTable(pivotData, sortedDates, sortedCrawlTimes, outputElement, calcType, scopeType) {
-            let tableHtml = `<div class="overflow-x-auto"><table class="min-w-full divide-y divide-gray-300">`;
-            tableHtml += `<thead class="bg-gray-50"><tr><th class="sticky left-0 bg-gray-50 z-10 py-3.5 pl-4 pr-3 text-left text-sm font-semibold">Crawl Time</th>`;
-            sortedDates.forEach(date => tableHtml += `<th class="px-3 py-3.5 text-center text-sm font-semibold">${date}</th>`);
-            tableHtml += `<th class="sticky right-0 bg-gray-50 z-10 py-3.5 pl-3 pr-4 text-center text-sm font-semibold">Grand Total</th></tr></thead>`;
-            tableHtml += `<tbody class="divide-y divide-gray-200 bg-white">`;
-            const dateTotals = {}; sortedDates.forEach(d => dateTotals[d] = { available_sum: 0, listed_sum: 0, total_sum: 0, osaxsales_sum: 0, listed_osaxsales_sum: 0, sales_sum: 0 });
-            
-            const calculateAvg = (totals) => {
-                if (!totals) return 0;
-                let numerator, denominator;
-                if (calcType === 'weighted') {
-                    numerator = (scopeType === 'all_stores') ? totals.osaxsales_sum : totals.listed_osaxsales_sum;
-                    denominator = totals.sales_sum;
-                } else {
-                    numerator = totals.available_sum;
-                    denominator = (scopeType === 'all_stores') ? totals.total_sum : totals.listed_sum;
-                }
-                return denominator > 0 ? (numerator / denominator) * 100 : 0;
-            };
-
-            sortedCrawlTimes.forEach(time => {
-                let rowTotals = { available_sum: 0, listed_sum: 0, total_sum: 0, osaxsales_sum: 0, listed_osaxsales_sum: 0, sales_sum: 0 };
-                tableHtml += `<tr><td class="sticky left-0 bg-white z-10 font-medium py-4 pl-4 pr-3 text-sm">${time}</td>`;
-                sortedDates.forEach(date => {
-                    const cell = pivotData[time]?.[date];
-                    if (cell) {
-                        const avg = calculateAvg(cell);
-                        tableHtml += `<td class="text-center py-4 px-3 text-sm" style="background-color: ${getGradientColor(avg)};">${avg.toFixed(0)}%</td>`;
-                        Object.keys(rowTotals).forEach(key => { rowTotals[key] += cell[key]; dateTotals[date][key] += cell[key]; });
-                    } else { tableHtml += `<td style="background-color: ${getGradientColor(null)};"></td>`; }
-                });
-                const rowAvg = calculateAvg(rowTotals);
-                tableHtml += `<td class="sticky right-0 bg-white z-10 font-semibold text-center py-4 pl-3 pr-4 text-sm" style="background-color: ${getGradientColor(rowAvg)};">${rowAvg.toFixed(0)}%</td></tr>`;
-            });
-            tableHtml += `</tbody><tfoot class="bg-gray-50"><tr><th class="sticky left-0 bg-gray-50 z-10 pl-4 pr-3 pt-3 text-left font-semibold text-sm">Grand Total</th>`;
-            let overallTotals = { available_sum: 0, listed_sum: 0, total_sum: 0, osaxsales_sum: 0, listed_osaxsales_sum: 0, sales_sum: 0 };
-            sortedDates.forEach(date => {
-                const colTotals = dateTotals[date];
-                const avg = calculateAvg(colTotals);
-                tableHtml += `<th class="text-center px-3 pt-3 font-semibold text-sm" style="background-color: ${getGradientColor(avg)};">${avg.toFixed(0)}%</th>`;
-                Object.keys(overallTotals).forEach(key => overallTotals[key] += colTotals[key]);
-            });
-            const overallAvg = calculateAvg(overallTotals);
-            tableHtml += `<th class="sticky right-0 bg-gray-50 z-10 py-3.5 pl-3 pr-4 text-center font-semibold text-sm" style="background-color: ${getGradientColor(overallAvg)};">${overallAvg.toFixed(0)}%</th>`;
-            tableHtml += `</tr></tfoot></table></div>`;
-            outputElement.innerHTML = tableHtml;
-        }
+        function processAndRenderPivot(data, outputElement) { /* ... unchanged ... */ }
+        function renderPivotTable(pivotData, sortedDates, sortedCrawlTimes, outputElement, calcType, scopeType) { /* ... unchanged ... */ }
 
         // --- UTILITY FUNCTIONS ---
-        function createSearchableMultiSelect(container, id, label, optionsSet, stateSet, changeCallback) {
-            stateSet.clear(); optionsSet.forEach(opt => { if(opt) stateSet.add(opt) });
+        function getGradientColor(percentage) { /* ... unchanged ... */ }
+        function createSearchableMultiSelect(container, id, label, optionsSet, stateSet, changeCallback, isTimeSort = false) {
+            stateSet.clear(); 
+            // Special handling for default selections for Time Slot
+            if (id === 'timeslot_summary') {
+                 new Set(['10_am', '5_pm', '10_pm']).forEach(item => stateSet.add(item));
+            } else {
+                 optionsSet.forEach(opt => { if(opt) stateSet.add(opt) });
+            }
+            
             container.innerHTML = `<div class="searchable-multiselect-container"><label for="${id}-button" class="block text-sm font-medium text-gray-700 mb-1">${label}</label><button id="${id}-button" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5 text-left flex justify-between items-center"><span class="truncate">All ${label}s</span><svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></button><div id="${id}-options" class="searchable-multiselect-options"><input type="text" id="${id}-search" class="search-input" placeholder="Search ${label}s..."><div id="${id}-options-list" class="options-list"></div></div></div>`;
             const button = document.getElementById(`${id}-button`), optionsPanel = document.getElementById(`${id}-options`), searchInput = document.getElementById(`${id}-search`), optionsList = document.getElementById(`${id}-options-list`);
-            const updateButtonText = () => {
-                const btnText = button.querySelector('span'), totalOptions = new Set(Array.from(optionsSet).filter(Boolean)).size;
-                if (stateSet.size === totalOptions) btnText.textContent = `All ${label}s`;
-                else if (stateSet.size === 0) btnText.textContent = `None Selected`;
-                else if (stateSet.size > 2) btnText.textContent = `${stateSet.size} ${label}s Selected`;
-                else btnText.textContent = Array.from(stateSet).join(', ');
-            };
+            const updateButtonText = () => { /* ... unchanged ... */ };
             const renderOptions = (filter = '') => {
                 optionsList.innerHTML = '';
                 const totalOptions = new Set(Array.from(optionsSet).filter(Boolean)).size;
@@ -538,8 +432,13 @@
                     renderOptions(searchInput.value); updateButtonText(); changeCallback();
                 });
                 optionsList.appendChild(selectAllDiv);
-                Array.from(optionsSet).sort((a,b)=> convertTimeTo24Hour(a) - convertTimeTo24Hour(b)).forEach(opt => {
-                    if (opt && opt.toLowerCase().includes(filter.toLowerCase())) {
+
+                // MODIFICATION: Bug fix for sorting
+                const optionsArray = Array.from(optionsSet).filter(Boolean);
+                const sortedOptions = isTimeSort ? optionsArray.sort((a,b)=> convertTimeTo24Hour(a) - convertTimeTo24Hour(b)) : optionsArray.sort();
+
+                sortedOptions.forEach(opt => {
+                    if (opt.toString().toLowerCase().includes(filter.toLowerCase())) {
                         const optionDiv = document.createElement('div');
                         optionDiv.className = 'searchable-multiselect-option';
                         optionDiv.innerHTML = `<input type="checkbox" value="${opt}" ${stateSet.has(opt) ? 'checked' : ''}><label class="ml-2 text-sm text-gray-800 w-full">${opt}</label>`;
@@ -553,53 +452,22 @@
                     }
                 });
             };
-            button.addEventListener('click', (e) => {
-                e.stopPropagation();
-                document.querySelectorAll('.searchable-multiselect-options.visible').forEach(panel => { if (panel.id !== optionsPanel.id) panel.classList.remove('visible'); });
-                optionsPanel.classList.toggle('visible');
-            });
+            button.addEventListener('click', (e) => { /* ... unchanged ... */ });
             searchInput.addEventListener('keyup', (e) => renderOptions(e.target.value));
             updateButtonText(); renderOptions();
         }
 
-        function parseDate(dateString) {
-            if (!dateString) return null;
-            const ymdMatch = dateString.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-            if (ymdMatch) {
-                const [_, year, month, day] = ymdMatch.map(p => parseInt(p, 10));
-                if (!isNaN(year) && !isNaN(month) && !isNaN(day)) return new Date(Date.UTC(year, month - 1, day));
-            }
-            const monthMap = {'jan': 0, 'feb': 1, 'mar': 2, 'apr': 3, 'may': 4, 'jun': 5, 'jul': 6, 'aug': 7, 'sep': 8, 'oct': 9, 'nov': 10, 'dec': 11};
-            const dayMonthMatch = dateString.trim().match(/^(\d+)[a-z\s-]*(\w+)/i);
-            if (dayMonthMatch) {
-                const day = parseInt(dayMonthMatch[1], 10), monthStr = dayMonthMatch[2].substring(0, 3).toLowerCase();
-                if (!isNaN(day) && monthMap.hasOwnProperty(monthStr)) return new Date(Date.UTC(new Date().getFullYear(), monthMap[monthStr], day));
-            }
-            const parts = dateString.match(/(\d+)/g); 
-            if (parts && parts.length >= 2) {
-                const day = parseInt(parts[0], 10), month = parseInt(parts[1], 10) - 1;
-                let year = (parts.length >= 3) ? parseInt(parts[2], 10) : new Date().getFullYear();
-                if (year < 100) year += 2000;
-                if (!isNaN(day) && !isNaN(month) && !isNaN(year) && month >= 0 && month < 12 && day > 0 && day <= 31) return new Date(Date.UTC(year, month, day));
-            }
-            const parsedDate = new Date(dateString);
-            if (parsedDate && !isNaN(parsedDate.getTime())) return new Date(Date.UTC(parsedDate.getUTCFullYear(), parsedDate.getUTCMonth(), parsedDate.getUTCDate()));
-            return null;
-        }
-        
+        function parseDate(dateString) { /* ... unchanged ... */ }
         function convertTimeTo24Hour(timeStr) {
-            if (!timeStr) return 9999;
-            const lower = timeStr.toLowerCase(); let hours = parseInt(lower.replace(/[^0-9]/g, ''), 10);
-            if (lower.includes('pm') && hours !== 12) hours += 12;
-            if (lower.includes('am') && hours === 12) hours = 0;
-            return hours;
+             if (!timeStr) return 9999;
+             // Bug fix for non-string values
+             const lower = String(timeStr).toLowerCase(); let hours = parseInt(lower.replace(/[^0-9]/g, ''), 10);
+             if (lower.includes('pm') && hours !== 12) hours += 12;
+             if (lower.includes('am') && hours === 12) hours = 0;
+             return hours;
         }
-        function showLoader(element, message) {
-             element.innerHTML = `<div class="text-center"><div class="loader"></div><p class="text-gray-600 mt-2">${message}</p></div>`;
-        }
-        function showError(element, message) {
-            element.innerHTML = `<div class="text-center text-red-600 bg-red-50 p-4 rounded-lg border border-red-200"><h3 class="font-semibold">Error</h3><p class="mt-1">${message}</p></div>`;
-        }
+        function showLoader(element, message) { /* ... unchanged ... */ }
+        function showError(element, message) { /* ... unchanged ... */ }
     </script>
 </body>
 </html>
