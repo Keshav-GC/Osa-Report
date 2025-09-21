@@ -148,7 +148,7 @@
                 </div>
             </div>
             <div id="sku-section" class="hidden">
-                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b pb-2 mb-6">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b pb-2 mb-6">
                     <h2 class="text-2xl font-bold text-gray-800">SKU-Level Deep Dive</h2>
                     <div class="flex flex-col md:flex-row md:space-x-4 items-end mt-4 md:mt-0">
                         <div id="toggle-calc-sku" class="toggle-container">
@@ -191,7 +191,6 @@
         const outputSkuDiv = document.getElementById('output-sku');
         const skuSection = document.getElementById('sku-section');
 
-        // MODIFICATION: Get all toggle containers
         const toggleCalcBrand = document.getElementById('toggle-calc-brand');
         const toggleScopeBrand = document.getElementById('toggle-scope-brand');
         const toggleCalcSku = document.getElementById('toggle-calc-sku');
@@ -214,7 +213,6 @@
             }
         });
 
-        // MODIFICATION: Add event listeners for all toggles
         toggleCalcBrand.addEventListener('change', () => processAndRenderPivot(brandFilteredData, outputBrandDiv));
         toggleScopeBrand.addEventListener('change', () => processAndRenderPivot(brandFilteredData, outputBrandDiv));
         toggleCalcSku.addEventListener('change', () => refreshSkuTable());
@@ -236,23 +234,26 @@
             Papa.parse(dataUrl, {
                 download: true, header: true, skipEmptyLines: true,
                 complete: (results) => {
+                    // MODIFICATION: Use exact matching for column names to avoid conflicts
                     const headers = results.meta.fields.map(h => h.trim().toLowerCase());
-                    // MODIFICATION: Add new column keys for weighted calculations
                     columnKeys = {
-                        platform: headers.find(h => h.includes('gc_platform')), bgr: headers.find(h => h.includes('bgr')),
-                        city: headers.find(h => h.includes('city')), sku: headers.find(h => h.includes('title')),
-                        time: headers.find(h => h.includes('gc_crawl_time')), date: headers.find(h => h.includes('report_date')),
-                        available: headers.find(h => h.includes('available_stores')), listed: headers.find(h => h.includes('listed_stores')),
-                        total: headers.find(h => h.includes('total_stores')),
-                        osaxsales: headers.find(h => h.includes('osaxsales')),
-                        listed_osaxsales: headers.find(h => h.includes('listed_osaxsales')),
-                        sales: headers.find(h => h.includes('sales'))
+                        platform: headers.find(h => h === 'gc_platform'),
+                        bgr: headers.find(h => h === 'bgr'),
+                        city: headers.find(h => h === 'gc_city'),
+                        sku: headers.find(h => h === 'title'),
+                        time: headers.find(h => h === 'gc_crawl_time'),
+                        date: headers.find(h => h === 'report_date'),
+                        available: headers.find(h => h === 'available_stores'),
+                        listed: headers.find(h => h === 'listed_stores'),
+                        total: headers.find(h => h === 'total_stores'),
+                        osaxsales: headers.find(h => h === 'osaxsales'),
+                        listed_osaxsales: headers.find(h => h === 'listed_osaxsales'),
+                        sales: headers.find(h => h === 'sales')
                     };
-                    // MODIFICATION: Check if all required columns exist
                     const requiredKeys = ['available', 'listed', 'total', 'osaxsales', 'listed_osaxsales', 'sales'];
                     const missingKeys = requiredKeys.filter(k => !columnKeys[k]);
                     if (missingKeys.length > 0) {
-                        showError(outputBrandDiv, `Data source error: Missing required columns: ${missingKeys.join(', ')}.`);
+                        showError(outputBrandDiv, `Data source error: Missing required columns: ${missingKeys.join(', ')}. Please check sheet for exact names.`);
                         return;
                     }
 
@@ -270,7 +271,6 @@
             });
         }
         
-        // MODIFICATION: New functions to get toggle states
         function getCalcType(section) {
             const selector = `input[name="calcType${section === 'brand' ? 'Brand' : 'Sku'}"]:checked`;
             return document.querySelector(selector).value;
@@ -312,7 +312,6 @@
             processAndRenderPivot(skuFilteredData, outputSkuDiv);
         }
 
-        // MODIFICATION: Updated to aggregate all necessary data for both calculation types
         function processAndRenderPivot(data, outputElement) {
             const legendId = outputElement.id.includes('brand') ? 'brand-legend' : 'sku-legend';
             if (!data.length) {
@@ -320,10 +319,22 @@
                 return showError(outputElement, "No data for current filters.");
             }
             const pivotData = {}, dates = new Set(), crawlTimes = new Set();
+            
+            const cleanAndParseFloat = (val) => {
+                if (typeof val !== 'string') return parseFloat(val);
+                const cleanedVal = val.replace(/[^0-9.-]/g, '');
+                return parseFloat(cleanedVal);
+            };
+
             data.forEach(row => {
                 const time = row[columnKeys.time], date = row[columnKeys.date];
-                const available = parseFloat(row[columnKeys.available]), listed = parseFloat(row[columnKeys.listed]), total = parseFloat(row[columnKeys.total]);
-                const osaxsales = parseFloat(row[columnKeys.osaxsales]), listed_osaxsales = parseFloat(row[columnKeys.listed_osaxsales]), sales = parseFloat(row[columnKeys.sales]);
+                
+                const available = cleanAndParseFloat(row[columnKeys.available]);
+                const listed = cleanAndParseFloat(row[columnKeys.listed]);
+                const total = cleanAndParseFloat(row[columnKeys.total]);
+                const osaxsales = cleanAndParseFloat(row[columnKeys.osaxsales]);
+                const listed_osaxsales = cleanAndParseFloat(row[columnKeys.listed_osaxsales]);
+                const sales = cleanAndParseFloat(row[columnKeys.sales]);
                 
                 if (!time || !date || isNaN(available) || isNaN(listed) || isNaN(total) || isNaN(osaxsales) || isNaN(listed_osaxsales) || isNaN(sales)) return;
                 
@@ -360,7 +371,6 @@
             return `hsl(${hue}, 90%, 85%)`;
         }
 
-        // MODIFICATION: Updated to handle all four calculation scenarios
         function renderPivotTable(pivotData, sortedDates, sortedCrawlTimes, outputElement, calcType, scopeType) {
             let tableHtml = `<div class="overflow-x-auto"><table class="min-w-full divide-y divide-gray-300">`;
             tableHtml += `<thead class="bg-gray-50"><tr><th class="sticky left-0 bg-gray-50 z-10 py-3.5 pl-4 pr-3 text-left text-sm font-semibold">Crawl Time</th>`;
@@ -379,6 +389,7 @@
                     numerator = totals.available_sum;
                     denominator = (scopeType === 'all_stores') ? totals.total_sum : totals.listed_sum;
                 }
+                // No longer capping the result, as the root cause is fixed.
                 return denominator > 0 ? (numerator / denominator) * 100 : 0;
             };
 
@@ -413,7 +424,7 @@
             outputElement.innerHTML = tableHtml;
         }
 
-        // --- UTILITY FUNCTIONS (No changes below this line) ---
+        // --- UTILITY FUNCTIONS ---
         function createSearchableMultiSelect(container, id, label, optionsSet, stateSet, changeCallback) {
             stateSet.clear(); 
             optionsSet.forEach(opt => { if(opt) stateSet.add(opt) });
