@@ -114,11 +114,19 @@
             <div>
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b pb-2 mb-6">
                        <h2 class="text-2xl font-bold text-gray-800">Brand-Wise Summary</h2>
-                       <div id="toggle-brand" class="toggle-container mt-4 md:mt-0">
-                           <input type="radio" id="brand-osa-all" name="osaTypeBrand" value="all_stores" class="hidden toggle-radio" checked>
-                           <label for="brand-osa-all" class="toggle-label">OSA (All Stores)</label>
-                           <input type="radio" id="brand-osa-listed" name="osaTypeBrand" value="listed_stores" class="hidden toggle-radio">
-                           <label for="brand-osa-listed" class="toggle-label">OSA (Listed Stores)</label>
+                       <div class="flex flex-col md:flex-row md:space-x-4 items-end mt-4 md:mt-0">
+                           <div id="toggle-calc-brand" class="toggle-container">
+                               <input type="radio" id="brand-calc-weighted" name="calcTypeBrand" value="weighted" class="hidden toggle-radio" checked>
+                               <label for="brand-calc-weighted" class="toggle-label">Weighted OSA</label>
+                               <input type="radio" id="brand-calc-normal" name="calcTypeBrand" value="normal" class="hidden toggle-radio">
+                               <label for="brand-calc-normal" class="toggle-label">Normal OSA</label>
+                           </div>
+                           <div id="toggle-scope-brand" class="toggle-container mt-2 md:mt-0">
+                               <input type="radio" id="brand-scope-all" name="scopeTypeBrand" value="all_stores" class="hidden toggle-radio" checked>
+                               <label for="brand-scope-all" class="toggle-label">All Stores</label>
+                               <input type="radio" id="brand-scope-listed" name="scopeTypeBrand" value="listed_stores" class="hidden toggle-radio">
+                               <label for="brand-scope-listed" class="toggle-label">Listed Stores</label>
+                           </div>
                        </div>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 items-end">
@@ -140,13 +148,21 @@
                 </div>
             </div>
             <div id="sku-section" class="hidden">
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b pb-2 mb-6">
+                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b pb-2 mb-6">
                     <h2 class="text-2xl font-bold text-gray-800">SKU-Level Deep Dive</h2>
-                    <div id="toggle-sku" class="toggle-container mt-4 md:mt-0">
-                        <input type="radio" id="sku-osa-all" name="osaTypeSku" value="all_stores" class="hidden toggle-radio" checked>
-                        <label for="sku-osa-all" class="toggle-label">OSA (All Stores)</label>
-                        <input type="radio" id="sku-osa-listed" name="osaTypeSku" value="listed_stores" class="hidden toggle-radio">
-                        <label for="sku-osa-listed" class="toggle-label">OSA (Listed Stores)</label>
+                    <div class="flex flex-col md:flex-row md:space-x-4 items-end mt-4 md:mt-0">
+                        <div id="toggle-calc-sku" class="toggle-container">
+                            <input type="radio" id="sku-calc-weighted" name="calcTypeSku" value="weighted" class="hidden toggle-radio" checked>
+                            <label for="sku-calc-weighted" class="toggle-label">Weighted OSA</label>
+                            <input type="radio" id="sku-calc-normal" name="calcTypeSku" value="normal" class="hidden toggle-radio">
+                            <label for="sku-calc-normal" class="toggle-label">Normal OSA</label>
+                        </div>
+                        <div id="toggle-scope-sku" class="toggle-container mt-2 md:mt-0">
+                            <input type="radio" id="sku-scope-all" name="scopeTypeSku" value="all_stores" class="hidden toggle-radio" checked>
+                            <label for="sku-scope-all" class="toggle-label">All Stores</label>
+                            <input type="radio" id="sku-scope-listed" name="scopeTypeSku" value="listed_stores" class="hidden toggle-radio">
+                            <label for="sku-scope-listed" class="toggle-label">Listed Stores</label>
+                        </div>
                     </div>
                 </div>
                 <div id="sku-multiselect-container" class="my-4"></div>
@@ -174,8 +190,12 @@
         const outputBrandDiv = document.getElementById('output-brand');
         const outputSkuDiv = document.getElementById('output-sku');
         const skuSection = document.getElementById('sku-section');
-        const toggleBrandContainer = document.getElementById('toggle-brand');
-        const toggleSkuContainer = document.getElementById('toggle-sku');
+
+        // MODIFICATION: Get all toggle containers
+        const toggleCalcBrand = document.getElementById('toggle-calc-brand');
+        const toggleScopeBrand = document.getElementById('toggle-scope-brand');
+        const toggleCalcSku = document.getElementById('toggle-calc-sku');
+        const toggleScopeSku = document.getElementById('toggle-scope-sku');
         
         const dataUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSs0rx52hCw6ZQRgnjNgZ6iJHKq6zZoW4-p1kgqYklsHOBOdP9ZExcYtXyZlA81Bu0XAVXfoT3xm6Wm/pub?gid=0&single=true&output=csv';
 
@@ -194,25 +214,22 @@
             }
         });
 
-        toggleBrandContainer.addEventListener('change', () => processAndRenderPivot(brandFilteredData, outputBrandDiv, getOsaType('brand')));
-        toggleSkuContainer.addEventListener('change', () => refreshSkuTable());
+        // MODIFICATION: Add event listeners for all toggles
+        toggleCalcBrand.addEventListener('change', () => processAndRenderPivot(brandFilteredData, outputBrandDiv));
+        toggleScopeBrand.addEventListener('change', () => processAndRenderPivot(brandFilteredData, outputBrandDiv));
+        toggleCalcSku.addEventListener('change', () => refreshSkuTable());
+        toggleScopeSku.addEventListener('change', () => refreshSkuTable());
         
         document.addEventListener('click', (e) => {
             const allDropdowns = document.querySelectorAll('.searchable-multiselect-container');
             let clickedInsideA_Dropdown = false;
             allDropdowns.forEach(container => {
-                if(container.contains(e.target)) {
-                    clickedInsideA_Dropdown = true;
-                }
+                if(container.contains(e.target)) clickedInsideA_Dropdown = true;
             });
-
             if (!clickedInsideA_Dropdown) {
-                document.querySelectorAll('.searchable-multiselect-options.visible').forEach(panel => {
-                    panel.classList.remove('visible');
-                });
+                document.querySelectorAll('.searchable-multiselect-options.visible').forEach(panel => panel.classList.remove('visible'));
             }
         });
-
 
         function loadDataFromUrl() {
             showLoader(outputBrandDiv, 'Loading live data...');
@@ -220,17 +237,25 @@
                 download: true, header: true, skipEmptyLines: true,
                 complete: (results) => {
                     const headers = results.meta.fields.map(h => h.trim().toLowerCase());
+                    // MODIFICATION: Add new column keys for weighted calculations
                     columnKeys = {
                         platform: headers.find(h => h.includes('gc_platform')), bgr: headers.find(h => h.includes('bgr')),
                         city: headers.find(h => h.includes('city')), sku: headers.find(h => h.includes('title')),
                         time: headers.find(h => h.includes('gc_crawl_time')), date: headers.find(h => h.includes('report_date')),
                         available: headers.find(h => h.includes('available_stores')), listed: headers.find(h => h.includes('listed_stores')),
                         total: headers.find(h => h.includes('total_stores')),
+                        osaxsales: headers.find(h => h.includes('osaxsales')),
+                        listed_osaxsales: headers.find(h => h.includes('listed_osaxsales')),
+                        sales: headers.find(h => h.includes('sales'))
                     };
-                    if (!columnKeys.available || !columnKeys.listed || !columnKeys.total) {
-                        showError(outputBrandDiv, "Data source error: Missing required store columns.");
+                    // MODIFICATION: Check if all required columns exist
+                    const requiredKeys = ['available', 'listed', 'total', 'osaxsales', 'listed_osaxsales', 'sales'];
+                    const missingKeys = requiredKeys.filter(k => !columnKeys[k]);
+                    if (missingKeys.length > 0) {
+                        showError(outputBrandDiv, `Data source error: Missing required columns: ${missingKeys.join(', ')}.`);
                         return;
                     }
+
                     baseData = results.data.map(row => {
                         const cleanedRow = {};
                         results.meta.fields.forEach(header => cleanedRow[header.trim().toLowerCase()] = row[header]?.trim() || '');
@@ -239,28 +264,29 @@
                     
                     const platforms = new Set(baseData.map(row => row[columnKeys.platform]));
                     createSearchableMultiSelect(platformContainer, 'platform', 'Platform', platforms, selectedPlatforms, updateDependentFilters);
-                    
                     updateDependentFilters();
                 },
                 error: (err) => showError(outputBrandDiv, "Could not load data. Check Google Sheet URL and sharing settings.")
             });
         }
         
-        function getOsaType(section) {
-            const selector = `input[name="osaType${section === 'brand' ? 'Brand' : 'Sku'}"]:checked`;
+        // MODIFICATION: New functions to get toggle states
+        function getCalcType(section) {
+            const selector = `input[name="calcType${section === 'brand' ? 'Brand' : 'Sku'}"]:checked`;
+            return document.querySelector(selector).value;
+        }
+        function getScopeType(section) {
+            const selector = `input[name="scopeType${section === 'brand' ? 'Brand' : 'Sku'}"]:checked`;
             return document.querySelector(selector).value;
         }
 
         function updateDependentFilters(){
             if (!baseData.length) return;
             const platformFilteredData = baseData.filter(row => selectedPlatforms.has(row[columnKeys.platform]));
-            
             const bgrs = new Set(platformFilteredData.map(row => row[columnKeys.bgr]));
             const cities = new Set(platformFilteredData.map(row => row[columnKeys.city]));
-            
             createSearchableMultiSelect(bgrContainer, 'bgr', 'BGR', bgrs, selectedBgrs, applyBrandFilters);
             createSearchableMultiSelect(cityContainer, 'city', 'City', cities, selectedCities, applyBrandFilters);
-
             applyBrandFilters();
         }
         
@@ -270,9 +296,7 @@
                 selectedBgrs.has(row[columnKeys.bgr]) && 
                 selectedCities.has(row[columnKeys.city])
             );
-            
-            processAndRenderPivot(brandFilteredData, outputBrandDiv, getOsaType('brand'));
-
+            processAndRenderPivot(brandFilteredData, outputBrandDiv);
             if (brandFilteredData.length > 0) {
                 skuSection.classList.remove('hidden');
                 const skus = new Set(brandFilteredData.map(row => row[columnKeys.sku]));
@@ -285,12 +309,13 @@
         
         function refreshSkuTable() {
             const skuFilteredData = brandFilteredData.filter(row => selectedSkus.has(row[columnKeys.sku]));
-            processAndRenderPivot(skuFilteredData, outputSkuDiv, getOsaType('sku'));
+            processAndRenderPivot(skuFilteredData, outputSkuDiv);
         }
 
-        function processAndRenderPivot(data, outputElement, osaType) {
+        // MODIFICATION: Updated to aggregate all necessary data for both calculation types
+        function processAndRenderPivot(data, outputElement) {
+            const legendId = outputElement.id.includes('brand') ? 'brand-legend' : 'sku-legend';
             if (!data.length) {
-                const legendId = outputElement.id === 'output-brand' ? 'brand-legend' : 'sku-legend';
                 document.getElementById(legendId).classList.add('hidden');
                 return showError(outputElement, "No data for current filters.");
             }
@@ -298,240 +323,169 @@
             data.forEach(row => {
                 const time = row[columnKeys.time], date = row[columnKeys.date];
                 const available = parseFloat(row[columnKeys.available]), listed = parseFloat(row[columnKeys.listed]), total = parseFloat(row[columnKeys.total]);
-                if (isNaN(available) || isNaN(listed) || isNaN(total) || !time || !date) return;
+                const osaxsales = parseFloat(row[columnKeys.osaxsales]), listed_osaxsales = parseFloat(row[columnKeys.listed_osaxsales]), sales = parseFloat(row[columnKeys.sales]);
+                
+                if (!time || !date || isNaN(available) || isNaN(listed) || isNaN(total) || isNaN(osaxsales) || isNaN(listed_osaxsales) || isNaN(sales)) return;
+                
                 dates.add(date); crawlTimes.add(time);
                 if (!pivotData[time]) pivotData[time] = {};
-                if (!pivotData[time][date]) pivotData[time][date] = { available_sum: 0, listed_sum: 0, total_sum: 0 };
+                if (!pivotData[time][date]) {
+                    pivotData[time][date] = { available_sum: 0, listed_sum: 0, total_sum: 0, osaxsales_sum: 0, listed_osaxsales_sum: 0, sales_sum: 0 };
+                }
                 pivotData[time][date].available_sum += available;
                 pivotData[time][date].listed_sum += listed;
                 pivotData[time][date].total_sum += total;
+                pivotData[time][date].osaxsales_sum += osaxsales;
+                pivotData[time][date].listed_osaxsales_sum += listed_osaxsales;
+                pivotData[time][date].sales_sum += sales;
             });
             const sortedDates = Array.from(dates).sort((a, b) => parseDate(a) - parseDate(b));
             const sortedCrawlTimes = Array.from(crawlTimes).sort((a, b) => convertTimeTo24Hour(a) - convertTimeTo24Hour(b));
             
-            const legendId = outputElement.id === 'output-brand' ? 'brand-legend' : 'sku-legend';
             if (!sortedDates.length || !sortedCrawlTimes.length) {
-                 document.getElementById(legendId).classList.add('hidden');
+                document.getElementById(legendId).classList.add('hidden');
                 return showError(outputElement, "No valid date/time data for pivot table.");
             }
 
             document.getElementById(legendId).classList.remove('hidden');
             document.getElementById(legendId).classList.add('flex');
-
-
-            renderPivotTable(pivotData, sortedDates, sortedCrawlTimes, outputElement, osaType);
+            const section = outputElement.id.includes('brand') ? 'brand' : 'sku';
+            renderPivotTable(pivotData, sortedDates, sortedCrawlTimes, outputElement, getCalcType(section), getScopeType(section));
         }
 
         function getGradientColor(percentage) {
             if (percentage === null || isNaN(percentage)) return '#ffffff';
-            if (percentage < 0) percentage = 0;
-            if (percentage > 100) percentage = 100;
-
+            if (percentage < 0) percentage = 0; if (percentage > 100) percentage = 100;
             const hue = (percentage / 100) * 120;
-            const saturation = '90%';
-            const lightness = '85%';
-            
-            return `hsl(${hue}, ${saturation}, ${lightness})`;
+            return `hsl(${hue}, 90%, 85%)`;
         }
 
-
-        function renderPivotTable(pivotData, sortedDates, sortedCrawlTimes, outputElement, osaType) {
+        // MODIFICATION: Updated to handle all four calculation scenarios
+        function renderPivotTable(pivotData, sortedDates, sortedCrawlTimes, outputElement, calcType, scopeType) {
             let tableHtml = `<div class="overflow-x-auto"><table class="min-w-full divide-y divide-gray-300">`;
             tableHtml += `<thead class="bg-gray-50"><tr><th class="sticky left-0 bg-gray-50 z-10 py-3.5 pl-4 pr-3 text-left text-sm font-semibold">Crawl Time</th>`;
             sortedDates.forEach(date => tableHtml += `<th class="px-3 py-3.5 text-center text-sm font-semibold">${date}</th>`);
             tableHtml += `<th class="sticky right-0 bg-gray-50 z-10 py-3.5 pl-3 pr-4 text-center text-sm font-semibold">Grand Total</th></tr></thead>`;
             tableHtml += `<tbody class="divide-y divide-gray-200 bg-white">`;
-            const dateTotals = {}; sortedDates.forEach(d => dateTotals[d] = { available_sum: 0, listed_sum: 0, total_sum: 0 });
+            const dateTotals = {}; sortedDates.forEach(d => dateTotals[d] = { available_sum: 0, listed_sum: 0, total_sum: 0, osaxsales_sum: 0, listed_osaxsales_sum: 0, sales_sum: 0 });
             
+            const calculateAvg = (totals) => {
+                if (!totals) return 0;
+                let numerator, denominator;
+                if (calcType === 'weighted') {
+                    numerator = (scopeType === 'all_stores') ? totals.osaxsales_sum : totals.listed_osaxsales_sum;
+                    denominator = totals.sales_sum;
+                } else { // normal
+                    numerator = totals.available_sum;
+                    denominator = (scopeType === 'all_stores') ? totals.total_sum : totals.listed_sum;
+                }
+                return denominator > 0 ? (numerator / denominator) * 100 : 0;
+            };
+
             sortedCrawlTimes.forEach(time => {
-                let rowTotals = { available_sum: 0, listed_sum: 0, total_sum: 0 };
+                let rowTotals = { available_sum: 0, listed_sum: 0, total_sum: 0, osaxsales_sum: 0, listed_osaxsales_sum: 0, sales_sum: 0 };
                 tableHtml += `<tr><td class="sticky left-0 bg-white z-10 font-medium py-4 pl-4 pr-3 text-sm">${time}</td>`;
                 sortedDates.forEach(date => {
                     const cell = pivotData[time]?.[date];
                     if (cell) {
-                        const denominator = osaType === 'all_stores' ? cell.total_sum : cell.listed_sum;
-                        const avg = denominator > 0 ? (cell.available_sum / denominator) * 100 : 0;
-                        const color = getGradientColor(avg);
-                        tableHtml += `<td class="text-center py-4 px-3 text-sm" style="background-color: ${color};">${avg.toFixed(0)}%</td>`;
+                        const avg = calculateAvg(cell);
+                        tableHtml += `<td class="text-center py-4 px-3 text-sm" style="background-color: ${getGradientColor(avg)};">${avg.toFixed(0)}%</td>`;
                         Object.keys(rowTotals).forEach(key => {
                             rowTotals[key] += cell[key];
                             dateTotals[date][key] += cell[key];
                         });
                     } else { tableHtml += `<td style="background-color: ${getGradientColor(null)};"></td>`; }
                 });
-                const rowDenominator = osaType === 'all_stores' ? rowTotals.total_sum : rowTotals.listed_sum;
-                const rowAvg = rowDenominator > 0 ? (rowTotals.available_sum / rowDenominator) * 100 : 0;
-                const rowColor = getGradientColor(rowAvg);
-                tableHtml += `<td class="sticky right-0 bg-white z-10 font-semibold text-center py-4 pl-3 pr-4 text-sm" style="background-color: ${rowColor};">${rowAvg.toFixed(0)}%</td></tr>`;
+                const rowAvg = calculateAvg(rowTotals);
+                tableHtml += `<td class="sticky right-0 bg-white z-10 font-semibold text-center py-4 pl-3 pr-4 text-sm" style="background-color: ${getGradientColor(rowAvg)};">${rowAvg.toFixed(0)}%</td></tr>`;
             });
             tableHtml += `</tbody><tfoot class="bg-gray-50"><tr><th class="sticky left-0 bg-gray-50 z-10 pl-4 pr-3 pt-3 text-left font-semibold text-sm">Grand Total</th>`;
-            let overallTotals = { available_sum: 0, listed_sum: 0, total_sum: 0 };
+            let overallTotals = { available_sum: 0, listed_sum: 0, total_sum: 0, osaxsales_sum: 0, listed_osaxsales_sum: 0, sales_sum: 0 };
             sortedDates.forEach(date => {
-                const total = dateTotals[date];
-                const colDenominator = osaType === 'all_stores' ? total.total_sum : total.listed_sum;
-                const avg = total && colDenominator > 0 ? (total.available_sum / colDenominator) * 100 : 0;
-                const colColor = getGradientColor(avg);
-                tableHtml += `<th class="text-center px-3 pt-3 font-semibold text-sm" style="background-color: ${colColor};">${avg.toFixed(0)}%</th>`;
-                Object.keys(overallTotals).forEach(key => overallTotals[key] += total[key]);
+                const colTotals = dateTotals[date];
+                const avg = calculateAvg(colTotals);
+                tableHtml += `<th class="text-center px-3 pt-3 font-semibold text-sm" style="background-color: ${getGradientColor(avg)};">${avg.toFixed(0)}%</th>`;
+                Object.keys(overallTotals).forEach(key => overallTotals[key] += colTotals[key]);
             });
-            const overallDenominator = osaType === 'all_stores' ? overallTotals.total_sum : overallTotals.listed_sum;
-            const overallAvg = overallDenominator > 0 ? (overallTotals.available_sum / overallDenominator) * 100 : 0;
-            const overallColor = getGradientColor(overallAvg);
-            tableHtml += `<th class="sticky right-0 bg-gray-50 z-10 py-3.5 pl-3 pr-4 text-center font-semibold text-sm" style="background-color: ${overallColor};">${overallAvg.toFixed(0)}%</th>`;
+            const overallAvg = calculateAvg(overallTotals);
+            tableHtml += `<th class="sticky right-0 bg-gray-50 z-10 py-3.5 pl-3 pr-4 text-center font-semibold text-sm" style="background-color: ${getGradientColor(overallAvg)};">${overallAvg.toFixed(0)}%</th>`;
             tableHtml += `</tr></tfoot></table></div>`;
             outputElement.innerHTML = tableHtml;
         }
 
-        // --- UTILITY FUNCTIONS ---
+        // --- UTILITY FUNCTIONS (No changes below this line) ---
         function createSearchableMultiSelect(container, id, label, optionsSet, stateSet, changeCallback) {
             stateSet.clear(); 
             optionsSet.forEach(opt => { if(opt) stateSet.add(opt) });
-            
-            container.innerHTML = `
-                <div class="searchable-multiselect-container">
-                    <label for="${id}-button" class="block text-sm font-medium text-gray-700 mb-1">${label}</label>
-                    <button id="${id}-button" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5 text-left flex justify-between items-center">
-                        <span class="truncate">All ${label}s</span>
-                        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                    </button>
-                    <div id="${id}-options" class="searchable-multiselect-options">
-                        <input type="text" id="${id}-search" class="search-input" placeholder="Search ${label}s...">
-                        <div id="${id}-options-list" class="options-list"></div>
-                    </div>
-                </div>`;
-
-            const button = document.getElementById(`${id}-button`);
-            const optionsPanel = document.getElementById(`${id}-options`);
-            const searchInput = document.getElementById(`${id}-search`);
-            const optionsList = document.getElementById(`${id}-options-list`);
-            
+            container.innerHTML = `<div class="searchable-multiselect-container"><label for="${id}-button" class="block text-sm font-medium text-gray-700 mb-1">${label}</label><button id="${id}-button" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5 text-left flex justify-between items-center"><span class="truncate">All ${label}s</span><svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></button><div id="${id}-options" class="searchable-multiselect-options"><input type="text" id="${id}-search" class="search-input" placeholder="Search ${label}s..."><div id="${id}-options-list" class="options-list"></div></div></div>`;
+            const button = document.getElementById(`${id}-button`), optionsPanel = document.getElementById(`${id}-options`), searchInput = document.getElementById(`${id}-search`), optionsList = document.getElementById(`${id}-options-list`);
             const updateButtonText = () => {
-                const btnText = button.querySelector('span');
-                const totalOptions = new Set(Array.from(optionsSet).filter(Boolean)).size;
+                const btnText = button.querySelector('span'), totalOptions = new Set(Array.from(optionsSet).filter(Boolean)).size;
                 if (stateSet.size === totalOptions) btnText.textContent = `All ${label}s`;
                 else if (stateSet.size === 0) btnText.textContent = `None Selected`;
                 else if (stateSet.size > 2) btnText.textContent = `${stateSet.size} ${label}s Selected`;
                 else btnText.textContent = Array.from(stateSet).join(', ');
             };
-
             const renderOptions = (filter = '') => {
                 optionsList.innerHTML = '';
                 const totalOptions = new Set(Array.from(optionsSet).filter(Boolean)).size;
-
                 const selectAllDiv = document.createElement('div');
                 selectAllDiv.className = 'searchable-multiselect-option font-semibold';
                 selectAllDiv.innerHTML = `<input type="checkbox" value="select-all" ${stateSet.size === totalOptions ? 'checked' : ''}><label class="ml-2 text-sm text-gray-800 w-full">Select All</label>`;
                 selectAllDiv.querySelector('input').addEventListener('change', (e) => {
-                    if (e.target.checked) optionsSet.forEach(opt => stateSet.add(opt));
-                    else stateSet.clear();
-                    renderOptions(searchInput.value);
-                    updateButtonText();
-                    changeCallback();
+                    if (e.target.checked) optionsSet.forEach(opt => stateSet.add(opt)); else stateSet.clear();
+                    renderOptions(searchInput.value); updateButtonText(); changeCallback();
                 });
                 optionsList.appendChild(selectAllDiv);
-
                 Array.from(optionsSet).sort().forEach(opt => {
                     if (opt && opt.toLowerCase().includes(filter.toLowerCase())) {
                         const optionDiv = document.createElement('div');
                         optionDiv.className = 'searchable-multiselect-option';
                         optionDiv.innerHTML = `<input type="checkbox" value="${opt}" ${stateSet.has(opt) ? 'checked' : ''}><label class="ml-2 text-sm text-gray-800 w-full">${opt}</label>`;
                         optionDiv.querySelector('input').addEventListener('change', (e) => {
-                            if (e.target.checked) stateSet.add(e.target.value);
-                            else stateSet.delete(e.target.value);
-                            
+                            if (e.target.checked) stateSet.add(e.target.value); else stateSet.delete(e.target.value);
                             const allCheckbox = optionsList.querySelector('input[value="select-all"]');
                             if(allCheckbox) allCheckbox.checked = (stateSet.size === totalOptions);
-
-                            updateButtonText();
-                            changeCallback();
+                            updateButtonText(); changeCallback();
                         });
                         optionsList.appendChild(optionDiv);
                     }
                 });
             };
-
             button.addEventListener('click', (e) => {
                 e.stopPropagation();
                 document.querySelectorAll('.searchable-multiselect-options.visible').forEach(panel => {
-                    if (panel.id !== optionsPanel.id) {
-                        panel.classList.remove('visible');
-                    }
+                    if (panel.id !== optionsPanel.id) panel.classList.remove('visible');
                 });
                 optionsPanel.classList.toggle('visible');
             });
             searchInput.addEventListener('keyup', (e) => renderOptions(e.target.value));
-            
-            updateButtonText();
-            renderOptions();
+            updateButtonText(); renderOptions();
         }
 
-        function populateSelect(selectElement, optionsSet) {
-            selectElement.innerHTML = '';
-            Array.from(optionsSet).sort().forEach(option => {
-                if (option) {
-                    const opt = document.createElement('option'); opt.value = option; opt.textContent = option; selectElement.appendChild(opt);
-                }
-            });
-        }
-
-        // MODIFICATION: Replaced with an even more robust date parsing function
         function parseDate(dateString) {
             if (!dateString) return null;
-
-            // 1. Try to parse YYYY-MM-DD format (most specific)
             const ymdMatch = dateString.match(/^(\d{4})-(\d{2})-(\d{2})$/);
             if (ymdMatch) {
-                const year = parseInt(ymdMatch[1], 10);
-                const month = parseInt(ymdMatch[2], 10) - 1; // Month is 0-indexed
-                const day = parseInt(ymdMatch[3], 10);
-                if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
-                    return new Date(Date.UTC(year, month, day));
-                }
+                const [_, year, month, day] = ymdMatch.map(p => parseInt(p, 10));
+                if (!isNaN(year) && !isNaN(month) && !isNaN(day)) return new Date(Date.UTC(year, month - 1, day));
             }
-
-            // 2. Try to parse "DD Mon" format (e.g., "28 Aug", "3rd Sep")
-            const monthMap = {
-                'jan': 0, 'feb': 1, 'mar': 2, 'apr': 3, 'may': 4, 'jun': 5,
-                'jul': 6, 'aug': 7, 'sep': 8, 'oct': 9, 'nov': 10, 'dec': 11
-            };
+            const monthMap = {'jan': 0, 'feb': 1, 'mar': 2, 'apr': 3, 'may': 4, 'jun': 5, 'jul': 6, 'aug': 7, 'sep': 8, 'oct': 9, 'nov': 10, 'dec': 11};
             const dayMonthMatch = dateString.trim().match(/^(\d+)[a-z\s-]*(\w+)/i);
             if (dayMonthMatch) {
-                const day = parseInt(dayMonthMatch[1], 10);
-                const monthStr = dayMonthMatch[2].substring(0, 3).toLowerCase();
-                
-                if (!isNaN(day) && monthMap.hasOwnProperty(monthStr)) {
-                    const month = monthMap[monthStr];
-                    const year = new Date().getFullYear(); // Assume current year
-                    return new Date(Date.UTC(year, month, day));
-                }
+                const day = parseInt(dayMonthMatch[1], 10), monthStr = dayMonthMatch[2].substring(0, 3).toLowerCase();
+                if (!isNaN(day) && monthMap.hasOwnProperty(monthStr)) return new Date(Date.UTC(new Date().getFullYear(), monthMap[monthStr], day));
             }
-            
-            // 3. Fallback for numeric DMY formats like "28/08/2025" or "28-08-25"
             const parts = dateString.match(/(\d+)/g); 
             if (parts && parts.length >= 2) {
-                const day = parseInt(parts[0], 10);
-                const month = parseInt(parts[1], 10) - 1;
-                let year;
-
-                if (parts.length >= 3) {
-                    year = parseInt(parts[2], 10);
-                    if (year < 100) year += 2000; // Handle YY format
-                } else {
-                    year = new Date().getFullYear(); // Assume current year if not provided
-                }
-
-                if (!isNaN(day) && !isNaN(month) && !isNaN(year) && month >= 0 && month < 12 && day > 0 && day <= 31) {
-                    return new Date(Date.UTC(year, month, day));
-                }
+                const day = parseInt(parts[0], 10), month = parseInt(parts[1], 10) - 1;
+                let year = (parts.length >= 3) ? parseInt(parts[2], 10) : new Date().getFullYear();
+                if (year < 100) year += 2000;
+                if (!isNaN(day) && !isNaN(month) && !isNaN(year) && month >= 0 && month < 12 && day > 0 && day <= 31) return new Date(Date.UTC(year, month, day));
             }
-
-            // 4. Final attempt using built-in parser for any other valid format
             const parsedDate = new Date(dateString);
-            if (parsedDate && !isNaN(parsedDate.getTime())) {
-                return new Date(Date.UTC(parsedDate.getUTCFullYear(), parsedDate.getUTCMonth(), parsedDate.getUTCDate()));
-            }
-
-            return null; // Return null if no format could be parsed
+            if (parsedDate && !isNaN(parsedDate.getTime())) return new Date(Date.UTC(parsedDate.getUTCFullYear(), parsedDate.getUTCMonth(), parsedDate.getUTCDate()));
+            return null;
         }
         
         function convertTimeTo24Hour(timeStr) {
