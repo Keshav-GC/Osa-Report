@@ -106,29 +106,40 @@
     </div>
     
     <div id="dashboard-content" class="hidden p-4 md:p-8">
-        <div class="max-w-7xl mx-auto bg-white rounded-xl shadow-lg p-6 md:p-8 space-y-10">
-            <div class="mb-8">
+        <div class="max-w-7xl mx-auto bg-white rounded-xl shadow-lg p-6 md:p-8 space-y-12">
+            <div>
                 <h1 class="text-3xl font-bold text-gray-900">Grupo Bimbo OSA Dashboard</h1>
                 <p class="text-gray-600 mt-1">This report is automatically updated. Data is refreshed each time the page is loaded.</p>
+                <div class="mt-6 flex flex-col md:flex-row md:space-x-4 items-start md:items-center">
+                    <div id="toggle-calc" class="toggle-container">
+                        <input type="radio" id="calc-weighted" name="calcType" value="weighted" class="hidden toggle-radio" checked>
+                        <label for="calc-weighted" class="toggle-label">Weighted OSA</label>
+                        <input type="radio" id="calc-normal" name="calcType" value="normal" class="hidden toggle-radio">
+                        <label for="calc-normal" class="toggle-label">Normal OSA</label>
+                    </div>
+                    <div id="toggle-scope" class="toggle-container mt-2 md:mt-0">
+                        <input type="radio" id="scope-all" name="scopeType" value="all_stores" class="hidden toggle-radio" checked>
+                        <label for="scope-all" class="toggle-label">All Stores</label>
+                        <input type="radio" id="scope-listed" name="scopeType" value="listed_stores" class="hidden toggle-radio">
+                        <label for="scope-listed" class="toggle-label">Listed Stores</label>
+                    </div>
+                </div>
             </div>
             
             <div>
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b pb-2 mb-6">
-                       <h2 class="text-2xl font-bold text-gray-800">OSA Summary</h2>
-                       <div class="flex flex-col md:flex-row md:space-x-4 items-end mt-4 md:mt-0">
-                           <div id="toggle-calc" class="toggle-container">
-                               <input type="radio" id="calc-weighted" name="calcType" value="weighted" class="hidden toggle-radio" checked>
-                               <label for="calc-weighted" class="toggle-label">Weighted OSA</label>
-                               <input type="radio" id="calc-normal" name="calcType" value="normal" class="hidden toggle-radio">
-                               <label for="calc-normal" class="toggle-label">Normal OSA</label>
-                           </div>
-                           <div id="toggle-scope" class="toggle-container mt-2 md:mt-0">
-                               <input type="radio" id="scope-all" name="scopeType" value="all_stores" class="hidden toggle-radio" checked>
-                               <label for="scope-all" class="toggle-label">All Stores</label>
-                               <input type="radio" id="scope-listed" name="scopeType" value="listed_stores" class="hidden toggle-radio">
-                               <label for="scope-listed" class="toggle-label">Listed Stores</label>
-                           </div>
-                       </div>
+                 <div class="border-b pb-2 mb-6">
+                    <h2 class="text-2xl font-bold text-gray-800">Platform Summary (Latest Day)</h2>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 items-end">
+                    <div id="bgr-summary-multiselect-container"></div>
+                    <div id="city-summary-multiselect-container"></div>
+                </div>
+                <div id="output-platform-summary" class="bg-gray-50 p-4 rounded-lg min-h-[200px] flex items-center justify-center"></div>
+            </div>
+
+            <div>
+                <div class="border-b pb-2 mb-6">
+                       <h2 class="text-2xl font-bold text-gray-800">Detailed Breakdown</h2>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 items-end">
                     <div id="platform-multiselect-container"></div>
@@ -153,23 +164,40 @@
     </div>
 
     <script>
+        // --- ELEMENT SELECTORS ---
         const loginOverlay = document.getElementById('login-overlay');
         const loginForm = document.getElementById('login-form');
         const dashboardContent = document.getElementById('dashboard-content');
+        
+        // Summary Table Elements
+        const bgrSummaryContainer = document.getElementById('bgr-summary-multiselect-container');
+        const citySummaryContainer = document.getElementById('city-summary-multiselect-container');
+        const outputPlatformSummaryDiv = document.getElementById('output-platform-summary');
+
+        // Detailed Table Elements
         const platformContainer = document.getElementById('platform-multiselect-container');
         const bgrContainer = document.getElementById('bgr-multiselect-container');
         const cityContainer = document.getElementById('city-multiselect-container');
         const skuContainer = document.getElementById('sku-multiselect-container');
         const outputDiv = document.getElementById('output-table');
+        
+        // Global Toggles
         const toggleCalc = document.getElementById('toggle-calc');
         const toggleScope = document.getElementById('toggle-scope');
         
         const dataUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSs0rx52hCw6ZQRgnjNgZ6iJHKq6zZoW4-p1kgqYklsHOBOdP9ZExcYtXyZlA81Bu0XAVXfoT3xm6Wm/pub?gid=0&single=true&output=csv';
 
+        // --- STATE VARIABLES ---
         let baseData = [], columnKeys = {};
-        let selectedPlatforms = new Set(), selectedCities = new Set(), selectedBgrs = new Set(), selectedSkus = new Set();
-        let activeData = []; // Holds the current data set for re-rendering by toggles
+        let activeData = []; // Holds the current data set for the detailed table
 
+        // Summary Filter State
+        let selectedBgrsSummary = new Set(), selectedCitiesSummary = new Set();
+        // Detailed Filter State
+        let selectedPlatforms = new Set(), selectedCities = new Set(), selectedBgrs = new Set(), selectedSkus = new Set();
+        
+
+        // --- INITIAL SETUP & EVENT LISTENERS ---
         loginForm.addEventListener('submit', (e) => {
             e.preventDefault();
             if (e.target.username.value === 'Grupobimbo' && e.target.password.value === 'Grupobimbo') {
@@ -181,9 +209,15 @@
             }
         });
 
-        // Toggles will re-process the last filtered data set
-        toggleCalc.addEventListener('change', () => processAndRenderPivot(activeData, outputDiv));
-        toggleScope.addEventListener('change', () => processAndRenderPivot(activeData, outputDiv));
+        // Toggles re-render both tables
+        toggleCalc.addEventListener('change', () => {
+            renderPlatformSummaryTable();
+            processAndRenderPivot(activeData, outputDiv)
+        });
+        toggleScope.addEventListener('change', () => {
+            renderPlatformSummaryTable();
+            processAndRenderPivot(activeData, outputDiv)
+        });
         
         document.addEventListener('click', (e) => {
             const allDropdowns = document.querySelectorAll('.searchable-multiselect-container');
@@ -196,30 +230,27 @@
             }
         });
 
+        // --- DATA LOADING & PREPARATION ---
         function loadDataFromUrl() {
-            showLoader(outputDiv, 'Loading live data...');
+            showLoader(outputDiv, 'Loading data...');
+            showLoader(outputPlatformSummaryDiv, '');
+
             Papa.parse(dataUrl, {
                 download: true, header: true, skipEmptyLines: true,
                 complete: (results) => {
                     const headers = results.meta.fields.map(h => h.trim().toLowerCase());
                     columnKeys = {
-                        platform: headers.find(h => h === 'gc_platform'),
-                        bgr: headers.find(h => h === 'bgr'),
-                        city: headers.find(h => h === 'gc_city'),
-                        sku: headers.find(h => h === 'title'),
-                        time: headers.find(h => h === 'gc_crawl_time'),
-                        date: headers.find(h => h === 'report_date'),
-                        available: headers.find(h => h === 'available_stores'),
-                        listed: headers.find(h => h === 'listed_stores'),
-                        total: headers.find(h => h === 'total_stores'),
-                        osaxsales: headers.find(h => h === 'osaxsales'),
-                        listed_osaxsales: headers.find(h => h === 'listed_osaxsales'),
-                        sales: headers.find(h => h === 'sales')
+                        platform: headers.find(h => h === 'gc_platform'), bgr: headers.find(h => h === 'bgr'), city: headers.find(h => h === 'gc_city'),
+                        sku: headers.find(h => h === 'title'), time: headers.find(h => h === 'gc_crawl_time'), date: headers.find(h => h === 'report_date'),
+                        available: headers.find(h => h === 'available_stores'), listed: headers.find(h => h === 'listed_stores'), total: headers.find(h => h === 'total_stores'),
+                        osaxsales: headers.find(h => h === 'osaxsales'), listed_osaxsales: headers.find(h => h === 'listed_osaxsales'), sales: headers.find(h => h === 'sales')
                     };
-                    const requiredKeys = ['platform', 'bgr', 'city', 'sku', 'available', 'listed', 'total', 'osaxsales', 'listed_osaxsales', 'sales'];
+                    const requiredKeys = ['platform', 'bgr', 'city', 'sku', 'time', 'date', 'available', 'listed', 'total', 'osaxsales', 'listed_osaxsales', 'sales'];
                     const missingKeys = requiredKeys.filter(k => !columnKeys[k]);
                     if (missingKeys.length > 0) {
-                        showError(outputDiv, `Data source error: Missing required columns: ${missingKeys.join(', ')}. Please check sheet for exact names.`);
+                        const errorMsg = `Data source error: Missing required columns: ${missingKeys.join(', ')}.`;
+                        showError(outputDiv, errorMsg);
+                        showError(outputPlatformSummaryDiv, errorMsg);
                         return;
                     }
 
@@ -229,21 +260,122 @@
                         return cleanedRow;
                     });
                     
-                    initializeFilters();
+                    initializeSummaryFilters();
+                    initializeDetailFilters();
                 },
-                error: (err) => showError(outputDiv, "Could not load data. Check Google Sheet URL and sharing settings.")
+                error: (err) => {
+                    const errorMsg = "Could not load data. Check Google Sheet URL and sharing settings.";
+                    showError(outputDiv, errorMsg);
+                    showError(outputPlatformSummaryDiv, errorMsg);
+                }
             });
         }
+
+        // --- TOGGLE STATE GETTERS ---
+        function getCalcType() { return document.querySelector('input[name="calcType"]:checked').value; }
+        function getScopeType() { return document.querySelector('input[name="scopeType"]:checked').value; }
         
-        function getCalcType() {
-            return document.querySelector('input[name="calcType"]:checked').value;
-        }
-        function getScopeType() {
-            return document.querySelector('input[name="scopeType"]:checked').value;
+        // --- SUMMARY TABLE LOGIC ---
+        function initializeSummaryFilters() {
+            const bgrs = new Set(baseData.map(row => row[columnKeys.bgr]));
+            const cities = new Set(baseData.map(row => row[columnKeys.city]));
+            createSearchableMultiSelect(bgrSummaryContainer, 'bgr_summary', 'BGR', bgrs, selectedBgrsSummary, renderPlatformSummaryTable);
+            createSearchableMultiSelect(citySummaryContainer, 'city_summary', 'City', cities, selectedCitiesSummary, renderPlatformSummaryTable);
+            renderPlatformSummaryTable();
         }
 
-        // MODIFICATION: Chained filter update functions
-        function initializeFilters() {
+        function renderPlatformSummaryTable() {
+            let summaryData = baseData;
+            if (selectedBgrsSummary.size > 0) summaryData = summaryData.filter(row => selectedBgrsSummary.has(row[columnKeys.bgr]));
+            if (selectedCitiesSummary.size > 0) summaryData = summaryData.filter(row => selectedCitiesSummary.has(row[columnKeys.city]));
+
+            if (summaryData.length === 0) {
+                showError(outputPlatformSummaryDiv, "No data for selected summary filters.");
+                return;
+            }
+
+            const latestDate = summaryData.reduce((latest, row) => {
+                const rowDate = parseDate(row[columnKeys.date]);
+                return rowDate > latest ? rowDate : latest;
+            }, new Date(0));
+            
+            const latestDateString = latestDate.toISOString().split('T')[0];
+            const latestDayData = summaryData.filter(row => {
+                 const rowDate = parseDate(row[columnKeys.date]);
+                 return rowDate && rowDate.toISOString().split('T')[0] === latestDateString;
+            });
+
+            if (latestDayData.length === 0) {
+                 showError(outputPlatformSummaryDiv, "No data available for the latest date.");
+                 return;
+            }
+
+            processAndRenderPlatformPivot(latestDayData, outputPlatformSummaryDiv);
+        }
+        
+        function processAndRenderPlatformPivot(data, outputElement) {
+            const pivotData = {}, times = new Set(), platforms = new Set();
+            const cleanAndParseFloat = (val) => parseFloat((typeof val === 'string' ? val.replace(/[^0-9.-]/g, '') : val));
+
+            data.forEach(row => {
+                const time = row[columnKeys.time], platform = row[columnKeys.platform];
+                const available = cleanAndParseFloat(row[columnKeys.available]), listed = cleanAndParseFloat(row[columnKeys.listed]), total = cleanAndParseFloat(row[columnKeys.total]);
+                const osaxsales = cleanAndParseFloat(row[columnKeys.osaxsales]), listed_osaxsales = cleanAndParseFloat(row[columnKeys.listed_osaxsales]), sales = cleanAndParseFloat(row[columnKeys.sales]);
+                if (!time || !platform || isNaN(available) || isNaN(listed) || isNaN(total) || isNaN(osaxsales) || isNaN(listed_osaxsales) || isNaN(sales)) return;
+                
+                times.add(time); platforms.add(platform);
+                if (!pivotData[time]) pivotData[time] = {};
+                if (!pivotData[time][platform]) {
+                    pivotData[time][platform] = { available_sum: 0, listed_sum: 0, total_sum: 0, osaxsales_sum: 0, listed_osaxsales_sum: 0, sales_sum: 0 };
+                }
+                const cell = pivotData[time][platform];
+                cell.available_sum += available; cell.listed_sum += listed; cell.total_sum += total;
+                cell.osaxsales_sum += osaxsales; cell.listed_osaxsales_sum += listed_osaxsales; cell.sales_sum += sales;
+            });
+
+            const sortedTimes = Array.from(times).sort((a, b) => convertTimeTo24Hour(a) - convertTimeTo24Hour(b));
+            const sortedPlatforms = Array.from(platforms).sort();
+            
+            if (!sortedTimes.length || !sortedPlatforms.length) {
+                return showError(outputElement, "No valid data to display in summary.");
+            }
+            displayPlatformSummaryPivot(pivotData, sortedTimes, sortedPlatforms, outputElement, getCalcType(), getScopeType());
+        }
+
+        function displayPlatformSummaryPivot(pivotData, sortedTimes, sortedPlatforms, outputElement, calcType, scopeType) {
+            let tableHtml = `<div class="overflow-x-auto"><table class="min-w-full divide-y divide-gray-300">`;
+            tableHtml += `<thead class="bg-gray-50"><tr><th class="sticky left-0 bg-gray-50 z-10 py-3.5 pl-4 pr-3 text-left text-sm font-semibold">Time Slot</th>`;
+            sortedPlatforms.forEach(p => tableHtml += `<th class="px-3 py-3.5 text-center text-sm font-semibold">${p}</th>`);
+            tableHtml += `</tr></thead><tbody class="divide-y divide-gray-200 bg-white">`;
+
+            const calculateAvg = (totals) => {
+                if (!totals) return 0;
+                let num, den;
+                if (calcType === 'weighted') {
+                    num = (scopeType === 'all_stores') ? totals.osaxsales_sum : totals.listed_osaxsales_sum;
+                    den = totals.sales_sum;
+                } else {
+                    num = totals.available_sum;
+                    den = (scopeType === 'all_stores') ? totals.total_sum : totals.listed_sum;
+                }
+                return den > 0 ? (num / den) * 100 : 0;
+            };
+
+            sortedTimes.forEach(time => {
+                tableHtml += `<tr><td class="sticky left-0 bg-white z-10 font-medium py-4 pl-4 pr-3 text-sm">${time}</td>`;
+                sortedPlatforms.forEach(platform => {
+                    const cell = pivotData[time]?.[platform];
+                    const avg = calculateAvg(cell);
+                    tableHtml += `<td class="text-center py-4 px-3 text-sm" style="background-color: ${getGradientColor(avg)};">${avg.toFixed(0)}%</td>`;
+                });
+                tableHtml += `</tr>`;
+            });
+            tableHtml += `</tbody></table></div>`;
+            outputElement.innerHTML = tableHtml;
+        }
+
+        // --- DETAILED TABLE LOGIC ---
+        function initializeDetailFilters() {
             const platforms = new Set(baseData.map(row => row[columnKeys.platform]));
             createSearchableMultiSelect(platformContainer, 'platform', 'Platform', platforms, selectedPlatforms, updateBgrAndCityFilters);
             updateBgrAndCityFilters();
@@ -261,9 +393,7 @@
 
         function updateSkuFilter() {
             const brandFilteredData = baseData.filter(row => 
-                selectedPlatforms.has(row[columnKeys.platform]) &&
-                selectedBgrs.has(row[columnKeys.bgr]) && 
-                selectedCities.has(row[columnKeys.city])
+                selectedPlatforms.has(row[columnKeys.platform]) && selectedBgrs.has(row[columnKeys.bgr]) && selectedCities.has(row[columnKeys.city])
             );
             const skus = new Set(brandFilteredData.map(row => row[columnKeys.sku]));
             createSearchableMultiSelect(skuContainer, 'sku', 'SKU (Title)', skus, selectedSkus, renderFinalTable);
@@ -272,10 +402,8 @@
         
         function renderFinalTable() {
             activeData = baseData.filter(row => 
-                selectedPlatforms.has(row[columnKeys.platform]) &&
-                selectedBgrs.has(row[columnKeys.bgr]) && 
-                selectedCities.has(row[columnKeys.city]) &&
-                selectedSkus.has(row[columnKeys.sku])
+                selectedPlatforms.has(row[columnKeys.platform]) && selectedBgrs.has(row[columnKeys.bgr]) &&
+                selectedCities.has(row[columnKeys.city]) && selectedSkus.has(row[columnKeys.sku])
             );
             processAndRenderPivot(activeData, outputDiv);
         }
@@ -287,12 +415,7 @@
                 return showError(outputElement, "No data for current filters.");
             }
             const pivotData = {}, dates = new Set(), crawlTimes = new Set();
-            
-            const cleanAndParseFloat = (val) => {
-                if (typeof val !== 'string') return parseFloat(val);
-                const cleanedVal = val.replace(/[^0-9.-]/g, '');
-                return parseFloat(cleanedVal);
-            };
+            const cleanAndParseFloat = (val) => parseFloat((typeof val === 'string' ? val.replace(/[^0-9.-]/g, '') : val));
 
             data.forEach(row => {
                 const time = row[columnKeys.time], date = row[columnKeys.date];
@@ -305,12 +428,9 @@
                 if (!pivotData[time][date]) {
                     pivotData[time][date] = { available_sum: 0, listed_sum: 0, total_sum: 0, osaxsales_sum: 0, listed_osaxsales_sum: 0, sales_sum: 0 };
                 }
-                pivotData[time][date].available_sum += available;
-                pivotData[time][date].listed_sum += listed;
-                pivotData[time][date].total_sum += total;
-                pivotData[time][date].osaxsales_sum += osaxsales;
-                pivotData[time][date].listed_osaxsales_sum += listed_osaxsales;
-                pivotData[time][date].sales_sum += sales;
+                const cell = pivotData[time][date];
+                cell.available_sum += available; cell.listed_sum += listed; cell.total_sum += total;
+                cell.osaxsales_sum += osaxsales; cell.listed_osaxsales_sum += listed_osaxsales; cell.sales_sum += sales;
             });
             const sortedDates = Array.from(dates).sort((a, b) => parseDate(a) - parseDate(b));
             const sortedCrawlTimes = Array.from(crawlTimes).sort((a, b) => convertTimeTo24Hour(a) - convertTimeTo24Hour(b));
@@ -323,13 +443,6 @@
             legend.classList.remove('hidden');
             legend.classList.add('flex');
             renderPivotTable(pivotData, sortedDates, sortedCrawlTimes, outputElement, getCalcType(), getScopeType());
-        }
-
-        function getGradientColor(percentage) {
-            if (percentage === null || isNaN(percentage)) return '#ffffff';
-            if (percentage < 0) percentage = 0; if (percentage > 100) percentage = 100;
-            const hue = (percentage / 100) * 120;
-            return `hsl(${hue}, 90%, 85%)`;
         }
 
         function renderPivotTable(pivotData, sortedDates, sortedCrawlTimes, outputElement, calcType, scopeType) {
@@ -346,7 +459,7 @@
                 if (calcType === 'weighted') {
                     numerator = (scopeType === 'all_stores') ? totals.osaxsales_sum : totals.listed_osaxsales_sum;
                     denominator = totals.sales_sum;
-                } else { // normal
+                } else {
                     numerator = totals.available_sum;
                     denominator = (scopeType === 'all_stores') ? totals.total_sum : totals.listed_sum;
                 }
@@ -361,10 +474,7 @@
                     if (cell) {
                         const avg = calculateAvg(cell);
                         tableHtml += `<td class="text-center py-4 px-3 text-sm" style="background-color: ${getGradientColor(avg)};">${avg.toFixed(0)}%</td>`;
-                        Object.keys(rowTotals).forEach(key => {
-                            rowTotals[key] += cell[key];
-                            dateTotals[date][key] += cell[key];
-                        });
+                        Object.keys(rowTotals).forEach(key => { rowTotals[key] += cell[key]; dateTotals[date][key] += cell[key]; });
                     } else { tableHtml += `<td style="background-color: ${getGradientColor(null)};"></td>`; }
                 });
                 const rowAvg = calculateAvg(rowTotals);
@@ -385,9 +495,15 @@
         }
 
         // --- UTILITY FUNCTIONS ---
+        function getGradientColor(percentage) {
+            if (percentage === null || isNaN(percentage)) return '#ffffff';
+            if (percentage < 0) percentage = 0; if (percentage > 100) percentage = 100;
+            const hue = (percentage / 100) * 120;
+            return `hsl(${hue}, 90%, 85%)`;
+        }
+
         function createSearchableMultiSelect(container, id, label, optionsSet, stateSet, changeCallback) {
-            stateSet.clear(); 
-            optionsSet.forEach(opt => { if(opt) stateSet.add(opt) });
+            stateSet.clear(); optionsSet.forEach(opt => { if(opt) stateSet.add(opt) });
             container.innerHTML = `<div class="searchable-multiselect-container"><label for="${id}-button" class="block text-sm font-medium text-gray-700 mb-1">${label}</label><button id="${id}-button" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5 text-left flex justify-between items-center"><span class="truncate">All ${label}s</span><svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></button><div id="${id}-options" class="searchable-multiselect-options"><input type="text" id="${id}-search" class="search-input" placeholder="Search ${label}s..."><div id="${id}-options-list" class="options-list"></div></div></div>`;
             const button = document.getElementById(`${id}-button`), optionsPanel = document.getElementById(`${id}-options`), searchInput = document.getElementById(`${id}-search`), optionsList = document.getElementById(`${id}-options-list`);
             const updateButtonText = () => {
