@@ -296,7 +296,6 @@
             let summaryData = baseData;
             if (selectedBgrsSummary.size > 0) summaryData = summaryData.filter(row => selectedBgrsSummary.has(row[columnKeys.bgr]));
             if (selectedCitiesSummary.size > 0) summaryData = summaryData.filter(row => selectedCitiesSummary.has(row[columnKeys.city]));
-
             if (summaryData.length === 0) { showError(outputPlatformSummaryDiv, "No data for selected summary filters."); return; }
             processAndRenderPlatformPivot(summaryData, outputPlatformSummaryDiv);
         }
@@ -307,6 +306,7 @@
 
             data.forEach(row => {
                 const time = row[columnKeys.time], platform = row[columnKeys.platform], date = row[columnKeys.date];
+                if (!selectedTimeslotsSummary.has(time)) return; 
                 const available = cleanAndParseFloat(row[columnKeys.available]), listed = cleanAndParseFloat(row[columnKeys.listed]), total = cleanAndParseFloat(row[columnKeys.total]);
                 const osaxsales = cleanAndParseFloat(row[columnKeys.osaxsales]), listed_osaxsales = cleanAndParseFloat(row[columnKeys.listed_osaxsales]), sales = cleanAndParseFloat(row[columnKeys.sales]);
                 if (!time || !platform || !date || isNaN(available) || isNaN(listed) || isNaN(total) || isNaN(osaxsales) || isNaN(listed_osaxsales) || isNaN(sales)) return;
@@ -404,14 +404,104 @@
             processAndRenderPivot(activeData, outputDiv);
         }
 
-        function processAndRenderPivot(data, outputElement) { /* ... unchanged ... */ }
-        function renderPivotTable(pivotData, sortedDates, sortedCrawlTimes, outputElement, calcType, scopeType) { /* ... unchanged ... */ }
+        // MODIFICATION: Restored this function
+        function processAndRenderPivot(data, outputElement) {
+            const legend = document.getElementById('legend');
+            if (!data || !data.length) {
+                legend.classList.add('hidden');
+                return showError(outputElement, "No data for current filters.");
+            }
+            const pivotData = {}, dates = new Set(), crawlTimes = new Set();
+            const cleanAndParseFloat = (val) => parseFloat((typeof val === 'string' ? val.replace(/[^0-9.-]/g, '') : val));
+
+            data.forEach(row => {
+                const time = row[columnKeys.time], date = row[columnKeys.date];
+                const available = cleanAndParseFloat(row[columnKeys.available]), listed = cleanAndParseFloat(row[columnKeys.listed]), total = cleanAndParseFloat(row[columnKeys.total]);
+                const osaxsales = cleanAndParseFloat(row[columnKeys.osaxsales]), listed_osaxsales = cleanAndParseFloat(row[columnKeys.listed_osaxsales]), sales = cleanAndParseFloat(row[columnKeys.sales]);
+                if (!time || !date || isNaN(available) || isNaN(listed) || isNaN(total) || isNaN(osaxsales) || isNaN(listed_osaxsales) || isNaN(sales)) return;
+                
+                dates.add(date); crawlTimes.add(time);
+                if (!pivotData[time]) pivotData[time] = {};
+                if (!pivotData[time][date]) {
+                    pivotData[time][date] = { available_sum: 0, listed_sum: 0, total_sum: 0, osaxsales_sum: 0, listed_osaxsales_sum: 0, sales_sum: 0 };
+                }
+                const cell = pivotData[time][date];
+                cell.available_sum += available; cell.listed_sum += listed; cell.total_sum += total;
+                cell.osaxsales_sum += osaxsales; cell.listed_osaxsales_sum += listed_osaxsales; cell.sales_sum += sales;
+            });
+            const sortedDates = Array.from(dates).sort((a, b) => parseDate(a) - parseDate(b));
+            const sortedCrawlTimes = Array.from(crawlTimes).sort((a, b) => convertTimeTo24Hour(a) - convertTimeTo24Hour(b));
+            
+            if (!sortedDates.length || !sortedCrawlTimes.length) {
+                legend.classList.add('hidden');
+                return showError(outputElement, "No valid date/time data for pivot table.");
+            }
+
+            legend.classList.remove('hidden');
+            legend.classList.add('flex');
+            renderPivotTable(pivotData, sortedDates, sortedCrawlTimes, outputElement, getCalcType(), getScopeType());
+        }
+
+        // MODIFICATION: Restored this function
+        function renderPivotTable(pivotData, sortedDates, sortedCrawlTimes, outputElement, calcType, scopeType) {
+            let tableHtml = `<div class="overflow-x-auto"><table class="min-w-full divide-y divide-gray-300">`;
+            tableHtml += `<thead class="bg-gray-50"><tr><th class="sticky left-0 bg-gray-50 z-10 py-3.5 pl-4 pr-3 text-left text-sm font-semibold">Crawl Time</th>`;
+            sortedDates.forEach(date => tableHtml += `<th class="px-3 py-3.5 text-center text-sm font-semibold">${date}</th>`);
+            tableHtml += `<th class="sticky right-0 bg-gray-50 z-10 py-3.5 pl-3 pr-4 text-center text-sm font-semibold">Grand Total</th></tr></thead>`;
+            tableHtml += `<tbody class="divide-y divide-gray-200 bg-white">`;
+            const dateTotals = {}; sortedDates.forEach(d => dateTotals[d] = { available_sum: 0, listed_sum: 0, total_sum: 0, osaxsales_sum: 0, listed_osaxsales_sum: 0, sales_sum: 0 });
+            
+            const calculateAvg = (totals) => {
+                if (!totals) return 0;
+                let numerator, denominator;
+                if (calcType === 'weighted') {
+                    numerator = (scopeType === 'all_stores') ? totals.osaxsales_sum : totals.listed_osaxsales_sum;
+                    denominator = totals.sales_sum;
+                } else {
+                    numerator = totals.available_sum;
+                    denominator = (scopeType === 'all_stores') ? totals.total_sum : totals.listed_sum;
+                }
+                return denominator > 0 ? (numerator / denominator) * 100 : 0;
+            };
+
+            sortedCrawlTimes.forEach(time => {
+                let rowTotals = { available_sum: 0, listed_sum: 0, total_sum: 0, osaxsales_sum: 0, listed_osaxsales_sum: 0, sales_sum: 0 };
+                tableHtml += `<tr><td class="sticky left-0 bg-white z-10 font-medium py-4 pl-4 pr-3 text-sm">${time}</td>`;
+                sortedDates.forEach(date => {
+                    const cell = pivotData[time]?.[date];
+                    if (cell) {
+                        const avg = calculateAvg(cell);
+                        tableHtml += `<td class="text-center py-4 px-3 text-sm" style="background-color: ${getGradientColor(avg)};">${avg.toFixed(0)}%</td>`;
+                        Object.keys(rowTotals).forEach(key => { rowTotals[key] += cell[key]; dateTotals[date][key] += cell[key]; });
+                    } else { tableHtml += `<td style="background-color: ${getGradientColor(null)};"></td>`; }
+                });
+                const rowAvg = calculateAvg(rowTotals);
+                tableHtml += `<td class="sticky right-0 bg-white z-10 font-semibold text-center py-4 pl-3 pr-4 text-sm" style="background-color: ${getGradientColor(rowAvg)};">${rowAvg.toFixed(0)}%</td></tr>`;
+            });
+            tableHtml += `</tbody><tfoot class="bg-gray-50"><tr><th class="sticky left-0 bg-gray-50 z-10 pl-4 pr-3 pt-3 text-left font-semibold text-sm">Grand Total</th>`;
+            let overallTotals = { available_sum: 0, listed_sum: 0, total_sum: 0, osaxsales_sum: 0, listed_osaxsales_sum: 0, sales_sum: 0 };
+            sortedDates.forEach(date => {
+                const colTotals = dateTotals[date];
+                const avg = calculateAvg(colTotals);
+                tableHtml += `<th class="text-center px-3 pt-3 font-semibold text-sm" style="background-color: ${getGradientColor(avg)};">${avg.toFixed(0)}%</th>`;
+                Object.keys(overallTotals).forEach(key => overallTotals[key] += colTotals[key]);
+            });
+            const overallAvg = calculateAvg(overallTotals);
+            tableHtml += `<th class="sticky right-0 bg-gray-50 z-10 py-3.5 pl-3 pr-4 text-center font-semibold text-sm" style="background-color: ${getGradientColor(overallAvg)};">${overallAvg.toFixed(0)}%</th>`;
+            tableHtml += `</tr></tfoot></table></div>`;
+            outputElement.innerHTML = tableHtml;
+        }
 
         // --- UTILITY FUNCTIONS ---
-        function getGradientColor(percentage) { /* ... unchanged ... */ }
+        function getGradientColor(percentage) {
+            if (percentage === null || isNaN(percentage)) return '#ffffff';
+            if (percentage < 0) percentage = 0; if (percentage > 100) percentage = 100;
+            const hue = (percentage / 100) * 120;
+            return `hsl(${hue}, 90%, 85%)`;
+        }
+
         function createSearchableMultiSelect(container, id, label, optionsSet, stateSet, changeCallback, isTimeSort = false) {
             stateSet.clear(); 
-            // Special handling for default selections for Time Slot
             if (id === 'timeslot_summary') {
                  new Set(['10_am', '5_pm', '10_pm']).forEach(item => stateSet.add(item));
             } else {
@@ -420,7 +510,13 @@
             
             container.innerHTML = `<div class="searchable-multiselect-container"><label for="${id}-button" class="block text-sm font-medium text-gray-700 mb-1">${label}</label><button id="${id}-button" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5 text-left flex justify-between items-center"><span class="truncate">All ${label}s</span><svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></button><div id="${id}-options" class="searchable-multiselect-options"><input type="text" id="${id}-search" class="search-input" placeholder="Search ${label}s..."><div id="${id}-options-list" class="options-list"></div></div></div>`;
             const button = document.getElementById(`${id}-button`), optionsPanel = document.getElementById(`${id}-options`), searchInput = document.getElementById(`${id}-search`), optionsList = document.getElementById(`${id}-options-list`);
-            const updateButtonText = () => { /* ... unchanged ... */ };
+            const updateButtonText = () => {
+                const btnText = button.querySelector('span'), totalOptions = new Set(Array.from(optionsSet).filter(Boolean)).size;
+                if (stateSet.size === totalOptions) btnText.textContent = `All ${label}s`;
+                else if (stateSet.size === 0) btnText.textContent = `None Selected`;
+                else if (stateSet.size > 2) btnText.textContent = `${stateSet.size} ${label}s Selected`;
+                else btnText.textContent = Array.from(stateSet).join(', ');
+            };
             const renderOptions = (filter = '') => {
                 optionsList.innerHTML = '';
                 const totalOptions = new Set(Array.from(optionsSet).filter(Boolean)).size;
@@ -433,7 +529,6 @@
                 });
                 optionsList.appendChild(selectAllDiv);
 
-                // MODIFICATION: Bug fix for sorting
                 const optionsArray = Array.from(optionsSet).filter(Boolean);
                 const sortedOptions = isTimeSort ? optionsArray.sort((a,b)=> convertTimeTo24Hour(a) - convertTimeTo24Hour(b)) : optionsArray.sort();
 
@@ -452,22 +547,49 @@
                     }
                 });
             };
-            button.addEventListener('click', (e) => { /* ... unchanged ... */ });
+            button.addEventListener('click', (e) => { e.stopPropagation(); document.querySelectorAll('.searchable-multiselect-options.visible').forEach(panel => { if (panel.id !== optionsPanel.id) panel.classList.remove('visible'); }); optionsPanel.classList.toggle('visible'); });
             searchInput.addEventListener('keyup', (e) => renderOptions(e.target.value));
             updateButtonText(); renderOptions();
         }
 
-        function parseDate(dateString) { /* ... unchanged ... */ }
+        function parseDate(dateString) {
+            if (!dateString) return null;
+            const ymdMatch = dateString.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            if (ymdMatch) {
+                const [_, year, month, day] = ymdMatch.map(p => parseInt(p, 10));
+                if (!isNaN(year) && !isNaN(month) && !isNaN(day)) return new Date(Date.UTC(year, month - 1, day));
+            }
+            const monthMap = {'jan': 0, 'feb': 1, 'mar': 2, 'apr': 3, 'may': 4, 'jun': 5, 'jul': 6, 'aug': 7, 'sep': 8, 'oct': 9, 'nov': 10, 'dec': 11};
+            const dayMonthMatch = dateString.trim().match(/^(\d+)[a-z\s-]*(\w+)/i);
+            if (dayMonthMatch) {
+                const day = parseInt(dayMonthMatch[1], 10), monthStr = dayMonthMatch[2].substring(0, 3).toLowerCase();
+                if (!isNaN(day) && monthMap.hasOwnProperty(monthStr)) return new Date(Date.UTC(new Date().getFullYear(), monthMap[monthStr], day));
+            }
+            const parts = dateString.match(/(\d+)/g); 
+            if (parts && parts.length >= 2) {
+                const day = parseInt(parts[0], 10), month = parseInt(parts[1], 10) - 1;
+                let year = (parts.length >= 3) ? parseInt(parts[2], 10) : new Date().getFullYear();
+                if (year < 100) year += 2000;
+                if (!isNaN(day) && !isNaN(month) && !isNaN(year) && month >= 0 && month < 12 && day > 0 && day <= 31) return new Date(Date.UTC(year, month, day));
+            }
+            const parsedDate = new Date(dateString);
+            if (parsedDate && !isNaN(parsedDate.getTime())) return new Date(Date.UTC(parsedDate.getUTCFullYear(), parsedDate.getUTCMonth(), parsedDate.getUTCDate()));
+            return null;
+        }
+        
         function convertTimeTo24Hour(timeStr) {
              if (!timeStr) return 9999;
-             // Bug fix for non-string values
              const lower = String(timeStr).toLowerCase(); let hours = parseInt(lower.replace(/[^0-9]/g, ''), 10);
              if (lower.includes('pm') && hours !== 12) hours += 12;
              if (lower.includes('am') && hours === 12) hours = 0;
              return hours;
         }
-        function showLoader(element, message) { /* ... unchanged ... */ }
-        function showError(element, message) { /* ... unchanged ... */ }
+        function showLoader(element, message) {
+             element.innerHTML = `<div class="text-center"><div class="loader"></div><p class="text-gray-600 mt-2">${message}</p></div>`;
+        }
+        function showError(element, message) {
+            element.innerHTML = `<div class="text-center text-red-600 bg-red-50 p-4 rounded-lg border border-red-200"><h3 class="font-semibold">Error</h3><p class="mt-1">${message}</p></div>`;
+        }
     </script>
 </body>
 </html>
