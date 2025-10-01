@@ -117,19 +117,19 @@
                  <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b pb-2 mb-6">
                     <h2 class="text-2xl font-bold text-gray-800">Platform Summary</h2>
                      <div class="flex flex-col md:flex-row md:space-x-4 items-end mt-4 md:mt-0">
-                        <div class="toggle-container">
-                            <input type="radio" id="summary-calc-weighted" name="calcTypeSummary" value="weighted" class="hidden toggle-radio" checked>
-                            <label for="summary-calc-weighted" class="toggle-label">Weighted OSA</label>
-                            <input type="radio" id="summary-calc-normal" name="calcTypeSummary" value="normal" class="hidden toggle-radio">
-                            <label for="summary-calc-normal" class="toggle-label">Normal OSA</label>
-                        </div>
-                        <div class="toggle-container mt-2 md:mt-0">
-                            <input type="radio" id="summary-scope-all" name="scopeTypeSummary" value="all_stores" class="hidden toggle-radio">
-                            <label for="summary-scope-all" class="toggle-label">All Stores</label>
-                            <input type="radio" id="summary-scope-listed" name="scopeTypeSummary" value="listed_stores" class="hidden toggle-radio" checked>
-                            <label for="summary-scope-listed" class="toggle-label">Listed Stores</label>
-                        </div>
-                    </div>
+                         <div class="toggle-container">
+                             <input type="radio" id="summary-calc-weighted" name="calcTypeSummary" value="weighted" class="hidden toggle-radio" checked>
+                             <label for="summary-calc-weighted" class="toggle-label">Weighted OSA</label>
+                             <input type="radio" id="summary-calc-normal" name="calcTypeSummary" value="normal" class="hidden toggle-radio">
+                             <label for="summary-calc-normal" class="toggle-label">Normal OSA</label>
+                         </div>
+                         <div class="toggle-container mt-2 md:mt-0">
+                             <input type="radio" id="summary-scope-all" name="scopeTypeSummary" value="all_stores" class="hidden toggle-radio">
+                             <label for="summary-scope-all" class="toggle-label">All Stores</label>
+                             <input type="radio" id="summary-scope-listed" name="scopeTypeSummary" value="listed_stores" class="hidden toggle-radio" checked>
+                             <label for="summary-scope-listed" class="toggle-label">Listed Stores</label>
+                         </div>
+                     </div>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 items-end">
                     <div id="bgr-summary-multiselect-container"></div>
@@ -141,26 +141,27 @@
 
             <div>
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b pb-2 mb-6">
-                       <h2 class="text-2xl font-bold text-gray-800">Detailed Breakdown</h2>
-                        <div class="flex flex-col md:flex-row md:space-x-4 items-end mt-4 md:mt-0">
-                        <div class="toggle-container">
-                            <input type="radio" id="detail-calc-weighted" name="calcTypeDetail" value="weighted" class="hidden toggle-radio" checked>
-                            <label for="detail-calc-weighted" class="toggle-label">Weighted OSA</label>
-                            <input type="radio" id="detail-calc-normal" name="calcTypeDetail" value="normal" class="hidden toggle-radio">
-                            <label for="detail-calc-normal" class="toggle-label">Normal OSA</label>
-                        </div>
-                        <div class="toggle-container mt-2 md:mt-0">
-                            <input type="radio" id="detail-scope-all" name="scopeTypeDetail" value="all_stores" class="hidden toggle-radio">
-                            <label for="detail-scope-all" class="toggle-label">All Stores</label>
-                            <input type="radio" id="detail-scope-listed" name="scopeTypeDetail" value="listed_stores" class="hidden toggle-radio" checked>
-                            <label for="detail-scope-listed" class="toggle-label">Listed Stores</label>
-                        </div>
-                    </div>
+                     <h2 class="text-2xl font-bold text-gray-800">Detailed Breakdown</h2>
+                      <div class="flex flex-col md:flex-row md:space-x-4 items-end mt-4 md:mt-0">
+                         <div class="toggle-container">
+                             <input type="radio" id="detail-calc-weighted" name="calcTypeDetail" value="weighted" class="hidden toggle-radio" checked>
+                             <label for="detail-calc-weighted" class="toggle-label">Weighted OSA</label>
+                             <input type="radio" id="detail-calc-normal" name="calcTypeDetail" value="normal" class="hidden toggle-radio">
+                             <label for="detail-calc-normal" class="toggle-label">Normal OSA</label>
+                         </div>
+                         <div class="toggle-container mt-2 md:mt-0">
+                             <input type="radio" id="detail-scope-all" name="scopeTypeDetail" value="all_stores" class="hidden toggle-radio">
+                             <label for="detail-scope-all" class="toggle-label">All Stores</label>
+                             <input type="radio" id="detail-scope-listed" name="scopeTypeDetail" value="listed_stores" class="hidden toggle-radio" checked>
+                             <label for="detail-scope-listed" class="toggle-label">Listed Stores</label>
+                         </div>
+                     </div>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 items-end">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8 items-end">
                     <div id="platform-multiselect-container"></div>
                     <div id="bgr-multiselect-container"></div>
                     <div id="city-multiselect-container"></div>
+                    <div id="brand-multiselect-container"></div>
                     <div id="sku-multiselect-container"></div>
                 </div>
                 <div id="legend" class="hidden justify-end items-center space-x-4 mb-2 text-sm">
@@ -193,6 +194,7 @@
         const platformContainer = document.getElementById('platform-multiselect-container');
         const bgrContainer = document.getElementById('bgr-multiselect-container');
         const cityContainer = document.getElementById('city-multiselect-container');
+        const brandContainer = document.getElementById('brand-multiselect-container');
         const skuContainer = document.getElementById('sku-multiselect-container');
         const outputDiv = document.getElementById('output-table');
         
@@ -204,7 +206,7 @@
 
         let selectedBgrsSummary = new Set(), selectedCitiesSummary = new Set();
         let selectedTimeslotsSummary = new Set(['10_am', '5_pm', '10_pm']);
-        let selectedPlatforms = new Set(), selectedCities = new Set(), selectedBgrs = new Set(), selectedSkus = new Set();
+        let selectedPlatforms = new Set(), selectedCities = new Set(), selectedBgrs = new Set(), selectedBrands = new Set(), selectedSkus = new Set();
         
         // --- INITIAL SETUP & EVENT LISTENERS ---
         loginForm.addEventListener('submit', (e) => {
@@ -251,12 +253,13 @@
                 complete: (results) => {
                     const headers = results.meta.fields.map(h => h.trim().toLowerCase());
                     columnKeys = {
-                        platform: headers.find(h => h === 'gc_platform'), bgr: headers.find(h => h === 'bgr'), city: headers.find(h => h === 'gc_city'),
-                        sku: headers.find(h => h === 'title'), time: headers.find(h => h === 'gc_crawl_time'), date: headers.find(h => h === 'report_date'),
-                        available: headers.find(h => h === 'available_stores'), listed: headers.find(h => h === 'listed_stores'), total: headers.find(h => h === 'total_stores'),
-                        osaxsales: headers.find(h => h === 'osaxsales'), listed_osaxsales: headers.find(h => h === 'listed_osaxsales'), sales: headers.find(h => h === 'sales')
+                        platform: headers.find(h => h === 'gc_platform'), bgr: headers.find(h => h === 'bgr'), city: headers.find(h => h === 'city'),
+                        brand: headers.find(h => h === 'brand'), sku: headers.find(h => h === 'title'), time: headers.find(h => h === 'gc_crawl_time'), 
+                        date: headers.find(h => h === 'report_date'), available: headers.find(h => h === 'available_stores'), listed: headers.find(h => h === 'listed_stores'), 
+                        total: headers.find(h => h === 'total_stores'), osaxsales: headers.find(h => h === 'osaxsales'), 
+                        listed_osaxsales: headers.find(h => h === 'listed_osaxsales'), sales: headers.find(h => h === 'sales')
                     };
-                    const requiredKeys = ['platform', 'bgr', 'city', 'sku', 'time', 'date', 'available', 'listed', 'total', 'osaxsales', 'listed_osaxsales', 'sales'];
+                    const requiredKeys = ['platform', 'bgr', 'city', 'brand', 'sku', 'time', 'date', 'available', 'listed', 'total', 'osaxsales', 'listed_osaxsales', 'sales'];
                     const missingKeys = requiredKeys.filter(k => !columnKeys[k]);
                     if (missingKeys.length > 0) {
                         const errorMsg = `Data source error: Missing required columns: ${missingKeys.join(', ')}.`;
@@ -388,24 +391,45 @@
             const platformFilteredData = baseData.filter(row => selectedPlatforms.has(row[columnKeys.platform]));
             const bgrs = new Set(platformFilteredData.map(row => row[columnKeys.bgr]));
             const cities = new Set(platformFilteredData.map(row => row[columnKeys.city]));
-            createSearchableMultiSelect(bgrContainer, 'bgr', 'BGR', bgrs, selectedBgrs, updateSkuFilter);
-            createSearchableMultiSelect(cityContainer, 'city', 'City', cities, selectedCities, updateSkuFilter);
+            createSearchableMultiSelect(bgrContainer, 'bgr', 'BGR', bgrs, selectedBgrs, updateBrandFilter);
+            createSearchableMultiSelect(cityContainer, 'city', 'City', cities, selectedCities, updateBrandFilter);
+            updateBrandFilter();
+        }
+        
+        function updateBrandFilter() {
+            const filteredData = baseData.filter(row => 
+                selectedPlatforms.has(row[columnKeys.platform]) && 
+                selectedBgrs.has(row[columnKeys.bgr]) && 
+                selectedCities.has(row[columnKeys.city])
+            );
+            const brands = new Set(filteredData.map(row => row[columnKeys.brand]));
+            createSearchableMultiSelect(brandContainer, 'brand', 'Brand', brands, selectedBrands, updateSkuFilter);
             updateSkuFilter();
         }
 
         function updateSkuFilter() {
-            const brandFilteredData = baseData.filter(row => selectedPlatforms.has(row[columnKeys.platform]) && selectedBgrs.has(row[columnKeys.bgr]) && selectedCities.has(row[columnKeys.city]));
-            const skus = new Set(brandFilteredData.map(row => row[columnKeys.sku]));
+            const filteredData = baseData.filter(row => 
+                selectedPlatforms.has(row[columnKeys.platform]) && 
+                selectedBgrs.has(row[columnKeys.bgr]) && 
+                selectedCities.has(row[columnKeys.city]) &&
+                selectedBrands.has(row[columnKeys.brand])
+            );
+            const skus = new Set(filteredData.map(row => row[columnKeys.sku]));
             createSearchableMultiSelect(skuContainer, 'sku', 'SKU (Title)', skus, selectedSkus, renderFinalTable);
             renderFinalTable();
         }
         
         function renderFinalTable() {
-            activeData = baseData.filter(row => selectedPlatforms.has(row[columnKeys.platform]) && selectedBgrs.has(row[columnKeys.bgr]) && selectedCities.has(row[columnKeys.city]) && selectedSkus.has(row[columnKeys.sku]));
+            activeData = baseData.filter(row => 
+                selectedPlatforms.has(row[columnKeys.platform]) && 
+                selectedBgrs.has(row[columnKeys.bgr]) && 
+                selectedCities.has(row[columnKeys.city]) && 
+                selectedBrands.has(row[columnKeys.brand]) && 
+                selectedSkus.has(row[columnKeys.sku])
+            );
             processAndRenderPivot(activeData, outputDiv);
         }
 
-        // MODIFICATION: Restored this function
         function processAndRenderPivot(data, outputElement) {
             const legend = document.getElementById('legend');
             if (!data || !data.length) {
@@ -443,7 +467,6 @@
             renderPivotTable(pivotData, sortedDates, sortedCrawlTimes, outputElement, getCalcType(), getScopeType());
         }
 
-        // MODIFICATION: Restored this function
         function renderPivotTable(pivotData, sortedDates, sortedCrawlTimes, outputElement, calcType, scopeType) {
             let tableHtml = `<div class="overflow-x-auto"><table class="min-w-full divide-y divide-gray-300">`;
             tableHtml += `<thead class="bg-gray-50"><tr><th class="sticky left-0 bg-gray-50 z-10 py-3.5 pl-4 pr-3 text-left text-sm font-semibold">Crawl Time</th>`;
@@ -589,7 +612,7 @@
              element.innerHTML = `<div class="text-center"><div class="loader"></div><p class="text-gray-600 mt-2">${message}</p></div>`;
         }
         function showError(element, message) {
-            element.innerHTML = `<div class="text-center text-red-600 bg-red-50 p-4 rounded-lg border border-red-200"><h3 class="font-semibold">Error</h3><p class="mt-1">${message}</p></div>`;
+             element.innerHTML = `<div class="text-center text-red-600 bg-red-50 p-4 rounded-lg border border-red-200"><h3 class="font-semibold">Error</h3><p class="mt-1">${message}</p></div>`;
         }
     </script>
 </body>
