@@ -131,9 +131,10 @@
                          </div>
                      </div>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 items-end">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 items-end">
                     <div id="bgr-summary-multiselect-container"></div>
                     <div id="city-summary-multiselect-container"></div>
+                    <div id="brand-summary-multiselect-container"></div>
                     <div id="timeslot-summary-multiselect-container"></div>
                 </div>
                 <div id="output-platform-summary" class="bg-gray-50 p-4 rounded-lg min-h-[200px] flex items-center justify-center"></div>
@@ -188,6 +189,7 @@
         
         const bgrSummaryContainer = document.getElementById('bgr-summary-multiselect-container');
         const citySummaryContainer = document.getElementById('city-summary-multiselect-container');
+        const brandSummaryContainer = document.getElementById('brand-summary-multiselect-container');
         const timeslotSummaryContainer = document.getElementById('timeslot-summary-multiselect-container');
         const outputPlatformSummaryDiv = document.getElementById('output-platform-summary');
 
@@ -204,7 +206,7 @@
         let baseData = [], columnKeys = {};
         let activeData = [];
 
-        let selectedBgrsSummary = new Set(), selectedCitiesSummary = new Set();
+        let selectedBgrsSummary = new Set(), selectedCitiesSummary = new Set(), selectedBrandsSummary = new Set();
         let selectedTimeslotsSummary = new Set(['10_am', '5_pm', '10_pm']);
         let selectedPlatforms = new Set(), selectedCities = new Set(), selectedBgrs = new Set(), selectedBrands = new Set(), selectedSkus = new Set();
         
@@ -288,10 +290,12 @@
         function initializeSummaryFilters() {
             const bgrs = new Set(baseData.map(row => row[columnKeys.bgr]));
             const cities = new Set(baseData.map(row => row[columnKeys.city]));
+            const brands = new Set(baseData.map(row => row[columnKeys.brand]));
             const timeslots = new Set(baseData.map(row => row[columnKeys.time]));
             
             createSearchableMultiSelect(bgrSummaryContainer, 'bgr_summary', 'BGR', bgrs, selectedBgrsSummary, renderPlatformSummaryTable);
             createSearchableMultiSelect(citySummaryContainer, 'city_summary', 'City', cities, selectedCitiesSummary, renderPlatformSummaryTable);
+            createSearchableMultiSelect(brandSummaryContainer, 'brand_summary', 'Brand', brands, selectedBrandsSummary, renderPlatformSummaryTable);
             createSearchableMultiSelect(timeslotSummaryContainer, 'timeslot_summary', 'Time Slot', timeslots, selectedTimeslotsSummary, renderPlatformSummaryTable, true);
             renderPlatformSummaryTable();
         }
@@ -300,6 +304,7 @@
             let summaryData = baseData;
             if (selectedBgrsSummary.size > 0) summaryData = summaryData.filter(row => selectedBgrsSummary.has(row[columnKeys.bgr]));
             if (selectedCitiesSummary.size > 0) summaryData = summaryData.filter(row => selectedCitiesSummary.has(row[columnKeys.city]));
+            if (selectedBrandsSummary.size > 0) summaryData = summaryData.filter(row => selectedBrandsSummary.has(row[columnKeys.brand]));
             if (summaryData.length === 0) { showError(outputPlatformSummaryDiv, "No data for selected summary filters."); return; }
             processAndRenderPlatformPivot(summaryData, outputPlatformSummaryDiv);
         }
