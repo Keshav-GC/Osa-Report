@@ -158,13 +158,13 @@
                          </div>
                      </div>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8 items-end">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6 mb-8 items-end">
                     <div id="platform-multiselect-container"></div>
                     <div id="bgr-multiselect-container"></div>
                     <div id="city-multiselect-container"></div>
                     <div id="brand-multiselect-container"></div>
                     <div id="sku-multiselect-container"></div>
-                </div>
+                    <div id="timeslot-detail-multiselect-container"></div> </div>
                 <div id="legend" class="hidden justify-end items-center space-x-4 mb-2 text-sm">
                     <span class="font-medium">Legend:</span>
                     <span class="text-red-600 font-semibold">&lt;50%</span>
@@ -198,6 +198,9 @@
         const cityContainer = document.getElementById('city-multiselect-container');
         const brandContainer = document.getElementById('brand-multiselect-container');
         const skuContainer = document.getElementById('sku-multiselect-container');
+        // CHANGE START: Added selector for the new detail time slot container
+        const timeslotDetailContainer = document.getElementById('timeslot-detail-multiselect-container');
+        // CHANGE END
         const outputDiv = document.getElementById('output-table');
         
         const dataUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSs0rx52hCw6ZQRgnjNgZ6iJHKq6zZoW4-p1kgqYklsHOBOdP9ZExcYtXyZlA81Bu0XAVXfoT3xm6Wm/pub?gid=0&single=true&output=csv';
@@ -207,8 +210,12 @@
         let activeData = [];
 
         let selectedBgrsSummary = new Set(), selectedCitiesSummary = new Set(), selectedBrandsSummary = new Set();
-        let selectedTimeslotsSummary = new Set(['10_am', '5_pm', '10_pm']);
+        // CHANGE START: Default timeslots for summary table initialized here, but will be set in createSearchableMultiSelect
+        let selectedTimeslotsSummary = new Set();
         let selectedPlatforms = new Set(), selectedCities = new Set(), selectedBgrs = new Set(), selectedBrands = new Set(), selectedSkus = new Set();
+        // CHANGE START: Added state for the new detail time slot filter
+        let selectedTimeslotsDetail = new Set();
+        // CHANGE END
         
         // --- INITIAL SETUP & EVENT LISTENERS ---
         loginForm.addEventListener('submit', (e) => {
@@ -389,6 +396,12 @@
         function initializeDetailFilters() {
             const platforms = new Set(baseData.map(row => row[columnKeys.platform]));
             createSearchableMultiSelect(platformContainer, 'platform', 'Platform', platforms, selectedPlatforms, updateBgrAndCityFilters);
+            
+            // CHANGE START: Create the new Time Slot filter for the detail view
+            const timeslots = new Set(baseData.map(row => row[columnKeys.time]));
+            createSearchableMultiSelect(timeslotDetailContainer, 'timeslot_detail', 'Time Slot', timeslots, selectedTimeslotsDetail, renderFinalTable, true);
+            // CHANGE END
+
             updateBgrAndCityFilters();
         }
 
@@ -425,13 +438,16 @@
         }
         
         function renderFinalTable() {
+            // CHANGE START: Added the new time slot filter to the data filtering logic
             activeData = baseData.filter(row => 
                 selectedPlatforms.has(row[columnKeys.platform]) && 
                 selectedBgrs.has(row[columnKeys.bgr]) && 
                 selectedCities.has(row[columnKeys.city]) && 
                 selectedBrands.has(row[columnKeys.brand]) && 
-                selectedSkus.has(row[columnKeys.sku])
+                selectedSkus.has(row[columnKeys.sku]) &&
+                selectedTimeslotsDetail.has(row[columnKeys.time]) // This is the new filter condition
             );
+            // CHANGE END
             processAndRenderPivot(activeData, outputDiv);
         }
 
@@ -530,12 +546,17 @@
         }
 
         function createSearchableMultiSelect(container, id, label, optionsSet, stateSet, changeCallback, isTimeSort = false) {
+            // CHANGE START: Modified this block to set specific defaults for the time filters
             stateSet.clear(); 
-            if (id === 'timeslot_summary') {
-                 new Set(['10_am', '5_pm', '10_pm']).forEach(item => stateSet.add(item));
+            if (id === 'timeslot_summary' || id === 'timeslot_detail') {
+                // For both time filters, default to 10_am and 5_pm
+                if (optionsSet.has('10_am')) stateSet.add('10_am');
+                if (optionsSet.has('5_pm')) stateSet.add('5_pm');
             } else {
-                 optionsSet.forEach(opt => { if(opt) stateSet.add(opt) });
+                // For all other filters, the default is to select all available options
+                optionsSet.forEach(opt => { if(opt) stateSet.add(opt) });
             }
+            // CHANGE END
             
             container.innerHTML = `<div class="searchable-multiselect-container"><label for="${id}-button" class="block text-sm font-medium text-gray-700 mb-1">${label}</label><button id="${id}-button" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5 text-left flex justify-between items-center"><span class="truncate">All ${label}s</span><svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></button><div id="${id}-options" class="searchable-multiselect-options"><input type="text" id="${id}-search" class="search-input" placeholder="Search ${label}s..."><div id="${id}-options-list" class="options-list"></div></div></div>`;
             const button = document.getElementById(`${id}-button`), optionsPanel = document.getElementById(`${id}-options`), searchInput = document.getElementById(`${id}-search`), optionsList = document.getElementById(`${id}-options-list`);
