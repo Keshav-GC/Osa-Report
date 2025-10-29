@@ -129,7 +129,7 @@
                              <label for="summary-scope-listed" class="toggle-label">Listed Stores</label>
                          </div>
                      </div>
-                </div>
+                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 items-end">
                     <div id="bgr-summary-multiselect-container"></div>
                     <div id="city-summary-multiselect-container"></div>
@@ -139,6 +139,32 @@
                 <div id="output-platform-summary" class="bg-gray-50 p-4 rounded-lg min-h-[200px] flex items-center justify-center"></div>
             </div>
 
+            <div>
+                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b pb-2 mb-6">
+                    <h2 class="text-2xl font-bold text-gray-800">City Summary (vs. Platform)</h2>
+                     <div class="flex flex-col md:flex-row md:space-x-4 items-end mt-4 md:mt-0">
+                         <div class="toggle-container">
+                             <input type="radio" id="city-calc-weighted" name="calcTypeCity" value="weighted" class="hidden toggle-radio" checked>
+                             <label for="city-calc-weighted" class="toggle-label">Weighted OSA</label>
+                             <input type="radio" id="city-calc-normal" name="calcTypeCity" value="normal" class="hidden toggle-radio">
+                             <label for="city-calc-normal" class="toggle-label">Normal OSA</label>
+                         </div>
+                         <div class="toggle-container mt-2 md:mt-0">
+                             <input type="radio" id="city-scope-all" name="scopeTypeCity" value="all_stores" class="hidden toggle-radio">
+                             <label for="city-scope-all" class="toggle-label">All Stores</label>
+                             <input type="radio" id="city-scope-listed" name="scopeTypeCity" value="listed_stores" class="hidden toggle-radio" checked>
+                             <label for="city-scope-listed" class="toggle-label">Listed Stores</label>
+                         </div>
+                     </div>
+                 </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 items-end">
+                    <div id="bgr-city-multiselect-container"></div>
+                    <div id="city-city-multiselect-container"></div>
+                    <div id="brand-city-multiselect-container"></div>
+                    <div id="timeslot-city-multiselect-container"></div>
+                </div>
+                <div id="output-city-summary" class="bg-gray-50 p-4 rounded-lg min-h-[200px] flex items-center justify-center"></div>
+            </div>
             <div>
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b pb-2 mb-6">
                      <h2 class="text-2xl font-bold text-gray-800">Detailed Breakdown</h2>
@@ -192,14 +218,20 @@
         const timeslotSummaryContainer = document.getElementById('timeslot-summary-multiselect-container');
         const outputPlatformSummaryDiv = document.getElementById('output-platform-summary');
 
+        // CHANGE START: Added selectors for new City Summary section
+        const bgrCityContainer = document.getElementById('bgr-city-multiselect-container');
+        const cityCityContainer = document.getElementById('city-city-multiselect-container');
+        const brandCityContainer = document.getElementById('brand-city-multiselect-container');
+        const timeslotCityContainer = document.getElementById('timeslot-city-multiselect-container');
+        const outputCitySummaryDiv = document.getElementById('output-city-summary');
+        // CHANGE END
+
         const platformContainer = document.getElementById('platform-multiselect-container');
         const bgrContainer = document.getElementById('bgr-multiselect-container');
         const cityContainer = document.getElementById('city-multiselect-container');
         const brandContainer = document.getElementById('brand-multiselect-container');
         const skuContainer = document.getElementById('sku-multiselect-container');
-        // CHANGE START: Added selector for the new detail time slot container
         const timeslotDetailContainer = document.getElementById('timeslot-detail-multiselect-container');
-        // CHANGE END
         const outputDiv = document.getElementById('output-table');
         
         const dataUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSs0rx52hCw6ZQRgnjNgZ6iJHKq6zZoW4-p1kgqYklsHOBOdP9ZExcYtXyZlA81Bu0XAVXfoT3xm6Wm/pub?gid=0&single=true&output=csv';
@@ -209,12 +241,15 @@
         let activeData = [];
 
         let selectedBgrsSummary = new Set(), selectedCitiesSummary = new Set(), selectedBrandsSummary = new Set();
-        // CHANGE START: Default timeslots for summary table initialized here, but will be set in createSearchableMultiSelect
         let selectedTimeslotsSummary = new Set();
-        let selectedPlatforms = new Set(), selectedCities = new Set(), selectedBgrs = new Set(), selectedBrands = new Set(), selectedSkus = new Set();
-        // CHANGE START: Added state for the new detail time slot filter
-        let selectedTimeslotsDetail = new Set();
+        
+        // CHANGE START: Added state for new City Summary filters
+        let selectedBgrsCity = new Set(), selectedCitiesCity = new Set(), selectedBrandsCity = new Set();
+        let selectedTimeslotsCity = new Set();
         // CHANGE END
+        
+        let selectedPlatforms = new Set(), selectedCities = new Set(), selectedBgrs = new Set(), selectedBrands = new Set(), selectedSkus = new Set();
+        let selectedTimeslotsDetail = new Set();
         
         // --- INITIAL SETUP & EVENT LISTENERS ---
         loginForm.addEventListener('submit', (e) => {
@@ -228,20 +263,34 @@
             }
         });
 
+        // CHANGE START: Updated toggle sync logic to include all 3 sections
         dashboardContent.addEventListener('change', (e) => {
             if (e.target.classList.contains('toggle-radio')) {
-                const name = e.target.name; const value = e.target.value; let targetName;
-                if (name.startsWith('calcType')) targetName = (name === 'calcTypeSummary') ? 'calcTypeDetail' : 'calcTypeSummary';
-                else if (name.startsWith('scopeType')) targetName = (name === 'scopeTypeSummary') ? 'scopeTypeDetail' : 'scopeTypeSummary';
+                const name = e.target.name;
+                const value = e.target.value;
+                let targets = [];
                 
-                if (targetName) {
-                    const targetRadio = document.querySelector(`input[name="${targetName}"][value="${value}"]`);
-                    if (targetRadio) targetRadio.checked = true;
+                if (name.startsWith('calcType')) {
+                    targets = ['calcTypeSummary', 'calcTypeDetail', 'calcTypeCity'];
+                } else if (name.startsWith('scopeType')) {
+                    targets = ['scopeTypeSummary', 'scopeTypeDetail', 'scopeTypeCity'];
                 }
+                
+                if (targets.length > 0) {
+                    targets.forEach(targetName => {
+                        if (targetName !== name) {
+                            const targetRadio = document.querySelector(`input[name="${targetName}"][value="${value}"]`);
+                            if (targetRadio) targetRadio.checked = true;
+                        }
+                    });
+                }
+                
                 renderPlatformSummaryTable();
+                renderCitySummaryTable(); // Render new table
                 renderFinalTable();
             }
         });
+        // CHANGE END
         
         document.addEventListener('click', (e) => {
             const allDropdowns = document.querySelectorAll('.searchable-multiselect-container');
@@ -256,6 +305,7 @@
         function loadDataFromUrl() {
             showLoader(outputDiv, 'Loading data...');
             showLoader(outputPlatformSummaryDiv, '');
+            showLoader(outputCitySummaryDiv, ''); // CHANGE: Added loader for new table
             Papa.parse(dataUrl, {
                 download: true, header: true, skipEmptyLines: true,
                 complete: (results) => {
@@ -271,7 +321,8 @@
                     const missingKeys = requiredKeys.filter(k => !columnKeys[k]);
                     if (missingKeys.length > 0) {
                         const errorMsg = `Data source error: Missing required columns: ${missingKeys.join(', ')}.`;
-                        showError(outputDiv, errorMsg); showError(outputPlatformSummaryDiv, errorMsg); return;
+                        // CHANGE: Added error for new table
+                        showError(outputDiv, errorMsg); showError(outputPlatformSummaryDiv, errorMsg); showError(outputCitySummaryDiv, errorMsg); return;
                     }
                     baseData = results.data.map(row => {
                         const cleanedRow = {};
@@ -279,11 +330,13 @@
                         return cleanedRow;
                     });
                     initializeSummaryFilters();
+                    initializeCityFilters(); // CHANGE: Initialize new filters
                     initializeDetailFilters();
                 },
                 error: (err) => {
                     const errorMsg = "Could not load data. Check Google Sheet URL and sharing settings.";
-                    showError(outputDiv, errorMsg); showError(outputPlatformSummaryDiv, errorMsg);
+                    // CHANGE: Added error for new table
+                    showError(outputDiv, errorMsg); showError(outputPlatformSummaryDiv, errorMsg); showError(outputCitySummaryDiv, errorMsg);
                 }
             });
         }
@@ -391,15 +444,124 @@
             outputElement.innerHTML = tableHtml;
         }
 
+        // --- CHANGE START: ADDED NEW CITY SUMMARY LOGIC ---
+        function initializeCityFilters() {
+            const bgrs = new Set(baseData.map(row => row[columnKeys.bgr]));
+            const cities = new Set(baseData.map(row => row[columnKeys.city]));
+            const brands = new Set(baseData.map(row => row[columnKeys.brand]));
+            const timeslots = new Set(baseData.map(row => row[columnKeys.time]));
+            
+            createSearchableMultiSelect(bgrCityContainer, 'bgr_city', 'BGR', bgrs, selectedBgrsCity, renderCitySummaryTable);
+            createSearchableMultiSelect(cityCityContainer, 'city_city', 'City', cities, selectedCitiesCity, renderCitySummaryTable);
+            createSearchableMultiSelect(brandCityContainer, 'brand_city', 'Brand', brands, selectedBrandsCity, renderCitySummaryTable);
+            createSearchableMultiSelect(timeslotCityContainer, 'timeslot_city', 'Time Slot', timeslots, selectedTimeslotsCity, renderCitySummaryTable, true);
+            renderCitySummaryTable();
+        }
+
+        function renderCitySummaryTable() {
+            let summaryData = baseData;
+            if (selectedBgrsCity.size > 0) summaryData = summaryData.filter(row => selectedBgrsCity.has(row[columnKeys.bgr]));
+            if (selectedCitiesCity.size > 0) summaryData = summaryData.filter(row => selectedCitiesCity.has(row[columnKeys.city]));
+            if (selectedBrandsCity.size > 0) summaryData = summaryData.filter(row => selectedBrandsCity.has(row[columnKeys.brand]));
+            if (summaryData.length === 0) { showError(outputCitySummaryDiv, "No data for selected summary filters."); return; }
+            processAndRenderCityPivot(summaryData, outputCitySummaryDiv);
+        }
+        
+        function processAndRenderCityPivot(data, outputElement) {
+            const pivotData = {}, platforms = new Set(), cities = new Set();
+            const cleanAndParseFloat = (val) => parseFloat((typeof val === 'string' ? val.replace(/[^0-9.-]/g, '') : val));
+
+            data.forEach(row => {
+                const time = row[columnKeys.time], platform = row[columnKeys.platform], city = row[columnKeys.city];
+                if (!selectedTimeslotsCity.has(time)) return; // Filter by selected time
+                const available = cleanAndParseFloat(row[columnKeys.available]), listed = cleanAndParseFloat(row[columnKeys.listed]), total = cleanAndParseFloat(row[columnKeys.total]);
+                const osaxsales = cleanAndParseFloat(row[columnKeys.osaxsales]), listed_osaxsales = cleanAndParseFloat(row[columnKeys.listed_osaxsales]), sales = cleanAndParseFloat(row[columnKeys.sales]);
+                if (!time || !platform || !city || isNaN(available) || isNaN(listed) || isNaN(total) || isNaN(osaxsales) || isNaN(listed_osaxsales) || isNaN(sales)) return;
+                
+                platforms.add(platform); cities.add(city);
+                if (!pivotData[city]) pivotData[city] = {};
+                if (!pivotData[city][platform]) {
+                    pivotData[city][platform] = { available_sum: 0, listed_sum: 0, total_sum: 0, osaxsales_sum: 0, listed_osaxsales_sum: 0, sales_sum: 0 };
+                }
+                const cell = pivotData[city][platform];
+                cell.available_sum += available; cell.listed_sum += listed; cell.total_sum += total;
+                cell.osaxsales_sum += osaxsales; cell.listed_osaxsales_sum += listed_osaxsales; cell.sales_sum += sales;
+            });
+
+            const sortedPlatforms = Array.from(platforms).sort();
+            const sortedCities = Array.from(cities).sort();
+            
+            if (!sortedPlatforms.length || !sortedCities.length) { return showError(outputElement, "No valid data to display in summary."); }
+            displayCitySummaryPivot(pivotData, sortedPlatforms, sortedCities, outputElement, getCalcType(), getScopeType());
+        }
+
+        function displayCitySummaryPivot(pivotData, sortedPlatforms, sortedCities, outputElement, calcType, scopeType) {
+            let tableHtml = `<div class="overflow-x-auto"><table class="min-w-full divide-y divide-gray-300">`;
+            tableHtml += `<thead class="bg-gray-50"><tr><th class="sticky left-0 bg-gray-50 z-10 py-3.5 pl-4 pr-3 text-left text-sm font-semibold">City</th>`;
+            sortedPlatforms.forEach(p => tableHtml += `<th class="px-3 py-3.5 text-center text-sm font-semibold">${p}</th>`);
+            tableHtml += `<th class="sticky right-0 bg-gray-50 z-10 py-3.5 pl-3 pr-4 text-center text-sm font-semibold">Grand Total</th></tr></thead>`;
+            tableHtml += `<tbody class="divide-y divide-gray-200 bg-white">`;
+
+            const calculateAvg = (totals) => {
+                if (!totals) return 0;
+                let num, den;
+                if (calcType === 'weighted') {
+                    num = (scopeType === 'all_stores') ? totals.osaxsales_sum : totals.listed_osaxsales_sum;
+                    den = totals.sales_sum;
+                } else {
+                    num = totals.available_sum;
+                    den = (scopeType === 'all_stores') ? totals.total_sum : totals.listed_sum;
+                }
+                return den > 0 ? (num / den) * 100 : 0;
+            };
+
+            const colTotals = {};
+            sortedPlatforms.forEach(p => colTotals[p] = { available_sum: 0, listed_sum: 0, total_sum: 0, osaxsales_sum: 0, listed_osaxsales_sum: 0, sales_sum: 0 });
+
+            sortedCities.forEach(city => {
+                let rowTotals = { available_sum: 0, listed_sum: 0, total_sum: 0, osaxsales_sum: 0, listed_osaxsales_sum: 0, sales_sum: 0 };
+                tableHtml += `<tr><td class="sticky left-0 bg-white z-10 font-medium py-4 pl-4 pr-3 text-sm">${city}</td>`;
+                
+                sortedPlatforms.forEach(platform => {
+                    const cell = pivotData[city]?.[platform];
+                    if (cell) {
+                        Object.keys(rowTotals).forEach(key => { 
+                            rowTotals[key] += cell[key]; 
+                            colTotals[platform][key] += cell[key]; 
+                        });
+                    }
+                    const avg = calculateAvg(cell);
+                    tableHtml += `<td class="text-center py-4 px-3 text-sm" style="background-color: ${getGradientColor(avg)};">${avg.toFixed(0)}%</td>`;
+                });
+                
+                const rowAvg = calculateAvg(rowTotals);
+                tableHtml += `<td class="sticky right-0 bg-white z-10 font-semibold text-center py-4 pl-3 pr-4 text-sm" style="background-color: ${getGradientColor(rowAvg)};">${rowAvg.toFixed(0)}%</td></tr>`;
+            });
+
+            tableHtml += `</tbody><tfoot class="bg-gray-50"><tr><th class="sticky left-0 bg-gray-50 z-10 pl-4 pr-3 pt-3 text-left font-semibold text-sm">Grand Total</th>`;
+            let overallTotals = { available_sum: 0, listed_sum: 0, total_sum: 0, osaxsales_sum: 0, listed_osaxsales_sum: 0, sales_sum: 0 };
+            
+            sortedPlatforms.forEach(platform => {
+                const colAvg = calculateAvg(colTotals[platform]);
+                tableHtml += `<th class="text-center px-3 pt-3 font-semibold text-sm" style="background-color: ${getGradientColor(colAvg)};">${colAvg.toFixed(0)}%</th>`;
+                Object.keys(overallTotals).forEach(key => overallTotals[key] += colTotals[platform][key]);
+            });
+            
+            const overallAvg = calculateAvg(overallTotals);
+            tableHtml += `<th class="sticky right-0 bg-gray-50 z-10 py-3.5 pl-3 pr-4 text-center font-semibold text-sm" style="background-color: ${getGradientColor(overallAvg)};">${overallAvg.toFixed(0)}%</th>`;
+            tableHtml += `</tr></tfoot></table></div>`;
+            outputElement.innerHTML = tableHtml;
+        }
+        // --- CHANGE END ---
+
+
         // --- DETAILED TABLE LOGIC ---
         function initializeDetailFilters() {
             const platforms = new Set(baseData.map(row => row[columnKeys.platform]));
             createSearchableMultiSelect(platformContainer, 'platform', 'Platform', platforms, selectedPlatforms, updateBgrAndCityFilters);
             
-            // CHANGE START: Create the new Time Slot filter for the detail view
             const timeslots = new Set(baseData.map(row => row[columnKeys.time]));
             createSearchableMultiSelect(timeslotDetailContainer, 'timeslot_detail', 'Time Slot', timeslots, selectedTimeslotsDetail, renderFinalTable, true);
-            // CHANGE END
 
             updateBgrAndCityFilters();
         }
@@ -437,16 +599,14 @@
         }
         
         function renderFinalTable() {
-            // CHANGE START: Added the new time slot filter to the data filtering logic
             activeData = baseData.filter(row => 
                 selectedPlatforms.has(row[columnKeys.platform]) && 
                 selectedBgrs.has(row[columnKeys.bgr]) && 
                 selectedCities.has(row[columnKeys.city]) && 
                 selectedBrands.has(row[columnKeys.brand]) && 
                 selectedSkus.has(row[columnKeys.sku]) &&
-                selectedTimeslotsDetail.has(row[columnKeys.time]) // This is the new filter condition
+                selectedTimeslotsDetail.has(row[columnKeys.time])
             );
-            // CHANGE END
             processAndRenderPivot(activeData, outputDiv);
         }
 
@@ -545,17 +705,17 @@
         }
 
         function createSearchableMultiSelect(container, id, label, optionsSet, stateSet, changeCallback, isTimeSort = false) {
-            // CHANGE START: Modified this block to set specific defaults for the time filters
             stateSet.clear(); 
-            if (id === 'timeslot_summary' || id === 'timeslot_detail') {
-                // For both time filters, default to 10_am and 5_pm
+            
+            // CHANGE START: Modified this block to default all time filters to '10_am' only
+            if (id.startsWith('timeslot_')) {
+                // For any time filter (summary, city, detail), default to '10_am'
                 if (optionsSet.has('10_am')) stateSet.add('10_am');
-                if (optionsSet.has('5_pm')) stateSet.add('5_pm');
             } else {
+            // CHANGE END
                 // For all other filters, the default is to select all available options
                 optionsSet.forEach(opt => { if(opt) stateSet.add(opt) });
             }
-            // CHANGE END
             
             container.innerHTML = `<div class="searchable-multiselect-container"><label for="${id}-button" class="block text-sm font-medium text-gray-700 mb-1">${label}</label><button id="${id}-button" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5 text-left flex justify-between items-center"><span class="truncate">All ${label}s</span><svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></button><div id="${id}-options" class="searchable-multiselect-options"><input type="text" id="${id}-search" class="search-input" placeholder="Search ${label}s..."><div id="${id}-options-list" class="options-list"></div></div></div>`;
             const button = document.getElementById(`${id}-button`), optionsPanel = document.getElementById(`${id}-options`), searchInput = document.getElementById(`${id}-search`), optionsList = document.getElementById(`${id}-options-list`);
