@@ -140,32 +140,6 @@
             </div>
 
             <div>
-                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b pb-2 mb-6">
-                    <h2 class="text-2xl font-bold text-gray-800">City Summary (vs. Platform)</h2>
-                     <div class="flex flex-col md:flex-row md:space-x-4 items-end mt-4 md:mt-0">
-                         <div class="toggle-container">
-                             <input type="radio" id="city-calc-weighted" name="calcTypeCity" value="weighted" class="hidden toggle-radio" checked>
-                             <label for="city-calc-weighted" class="toggle-label">Weighted OSA</label>
-                             <input type="radio" id="city-calc-normal" name="calcTypeCity" value="normal" class="hidden toggle-radio">
-                             <label for="city-calc-normal" class="toggle-label">Normal OSA</label>
-                         </div>
-                         <div class="toggle-container mt-2 md:mt-0">
-                             <input type="radio" id="city-scope-all" name="scopeTypeCity" value="all_stores" class="hidden toggle-radio">
-                             <label for="city-scope-all" class="toggle-label">All Stores</label>
-                             <input type="radio" id="city-scope-listed" name="scopeTypeCity" value="listed_stores" class="hidden toggle-radio" checked>
-                             <label for="city-scope-listed" class="toggle-label">Listed Stores</label>
-                         </div>
-                     </div>
-                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 items-end">
-                    <div id="bgr-city-multiselect-container"></div>
-                    <div id="city-city-multiselect-container"></div>
-                    <div id="brand-city-multiselect-container"></div>
-                    <div id="timeslot-city-multiselect-container"></div>
-                </div>
-                <div id="output-city-summary" class="bg-gray-50 p-4 rounded-lg min-h-[200px] flex items-center justify-center"></div>
-            </div>
-            <div>
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b pb-2 mb-6">
                      <h2 class="text-2xl font-bold text-gray-800">Detailed Breakdown</h2>
                       <div class="flex flex-col md:flex-row md:space-x-4 items-end mt-4 md:mt-0">
@@ -203,7 +177,34 @@
                     </div>
                 </div>
             </div>
-        </div>
+
+            <div>
+                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b pb-2 mb-6">
+                    <h2 class="text-2xl font-bold text-gray-800">City Summary (vs. Platform)</h2>
+                     <div class="flex flex-col md:flex-row md:space-x-4 items-end mt-4 md:mt-0">
+                         <div class="toggle-container">
+                             <input type="radio" id="city-calc-weighted" name="calcTypeCity" value="weighted" class="hidden toggle-radio" checked>
+                             <label for="city-calc-weighted" class="toggle-label">Weighted OSA</label>
+                             <input type="radio" id="city-calc-normal" name="calcTypeCity" value="normal" class="hidden toggle-radio">
+                             <label for="city-calc-normal" class="toggle-label">Normal OSA</label>
+                         </div>
+                         <div class="toggle-container mt-2 md:mt-0">
+                             <input type="radio" id="city-scope-all" name="scopeTypeCity" value="all_stores" class="hidden toggle-radio">
+                             <label for="city-scope-all" class="toggle-label">All Stores</label>
+                             <input type="radio" id="city-scope-listed" name="scopeTypeCity" value="listed_stores" class="hidden toggle-radio" checked>
+                             <label for="city-scope-listed" class="toggle-label">Listed Stores</label>
+                         </div>
+                     </div>
+                 </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 items-end">
+                    <div id="bgr-city-multiselect-container"></div>
+                    <div id="city-city-multiselect-container"></div>
+                    <div id="brand-city-multiselect-container"></div>
+                    <div id="timeslot-city-multiselect-container"></div>
+                </div>
+                <div id="output-city-summary" class="bg-gray-50 p-4 rounded-lg min-h-[200px] flex items-center justify-center"></div>
+            </div>
+            </div>
     </div>
 
     <script>
@@ -218,13 +219,12 @@
         const timeslotSummaryContainer = document.getElementById('timeslot-summary-multiselect-container');
         const outputPlatformSummaryDiv = document.getElementById('output-platform-summary');
 
-        // CHANGE START: Added selectors for new City Summary section
+        // Selectors for City Summary section
         const bgrCityContainer = document.getElementById('bgr-city-multiselect-container');
         const cityCityContainer = document.getElementById('city-city-multiselect-container');
         const brandCityContainer = document.getElementById('brand-city-multiselect-container');
         const timeslotCityContainer = document.getElementById('timeslot-city-multiselect-container');
         const outputCitySummaryDiv = document.getElementById('output-city-summary');
-        // CHANGE END
 
         const platformContainer = document.getElementById('platform-multiselect-container');
         const bgrContainer = document.getElementById('bgr-multiselect-container');
@@ -243,10 +243,9 @@
         let selectedBgrsSummary = new Set(), selectedCitiesSummary = new Set(), selectedBrandsSummary = new Set();
         let selectedTimeslotsSummary = new Set();
         
-        // CHANGE START: Added state for new City Summary filters
+        // State for new City Summary filters
         let selectedBgrsCity = new Set(), selectedCitiesCity = new Set(), selectedBrandsCity = new Set();
         let selectedTimeslotsCity = new Set();
-        // CHANGE END
         
         let selectedPlatforms = new Set(), selectedCities = new Set(), selectedBgrs = new Set(), selectedBrands = new Set(), selectedSkus = new Set();
         let selectedTimeslotsDetail = new Set();
@@ -263,7 +262,7 @@
             }
         });
 
-        // CHANGE START: Updated toggle sync logic to include all 3 sections
+        // Updated toggle sync logic to include all 3 sections
         dashboardContent.addEventListener('change', (e) => {
             if (e.target.classList.contains('toggle-radio')) {
                 const name = e.target.name;
@@ -290,7 +289,6 @@
                 renderFinalTable();
             }
         });
-        // CHANGE END
         
         document.addEventListener('click', (e) => {
             const allDropdowns = document.querySelectorAll('.searchable-multiselect-container');
@@ -305,7 +303,7 @@
         function loadDataFromUrl() {
             showLoader(outputDiv, 'Loading data...');
             showLoader(outputPlatformSummaryDiv, '');
-            showLoader(outputCitySummaryDiv, ''); // CHANGE: Added loader for new table
+            showLoader(outputCitySummaryDiv, ''); // Added loader for new table
             Papa.parse(dataUrl, {
                 download: true, header: true, skipEmptyLines: true,
                 complete: (results) => {
@@ -321,7 +319,6 @@
                     const missingKeys = requiredKeys.filter(k => !columnKeys[k]);
                     if (missingKeys.length > 0) {
                         const errorMsg = `Data source error: Missing required columns: ${missingKeys.join(', ')}.`;
-                        // CHANGE: Added error for new table
                         showError(outputDiv, errorMsg); showError(outputPlatformSummaryDiv, errorMsg); showError(outputCitySummaryDiv, errorMsg); return;
                     }
                     baseData = results.data.map(row => {
@@ -330,12 +327,11 @@
                         return cleanedRow;
                     });
                     initializeSummaryFilters();
-                    initializeCityFilters(); // CHANGE: Initialize new filters
+                    initializeCityFilters(); // Initialize new filters
                     initializeDetailFilters();
                 },
                 error: (err) => {
                     const errorMsg = "Could not load data. Check Google Sheet URL and sharing settings.";
-                    // CHANGE: Added error for new table
                     showError(outputDiv, errorMsg); showError(outputPlatformSummaryDiv, errorMsg); showError(outputCitySummaryDiv, errorMsg);
                 }
             });
@@ -444,7 +440,7 @@
             outputElement.innerHTML = tableHtml;
         }
 
-        // --- CHANGE START: ADDED NEW CITY SUMMARY LOGIC ---
+        // --- CITY SUMMARY LOGIC ---
         function initializeCityFilters() {
             const bgrs = new Set(baseData.map(row => row[columnKeys.bgr]));
             const cities = new Set(baseData.map(row => row[columnKeys.city]));
@@ -552,7 +548,6 @@
             tableHtml += `</tr></tfoot></table></div>`;
             outputElement.innerHTML = tableHtml;
         }
-        // --- CHANGE END ---
 
 
         // --- DETAILED TABLE LOGIC ---
@@ -707,12 +702,10 @@
         function createSearchableMultiSelect(container, id, label, optionsSet, stateSet, changeCallback, isTimeSort = false) {
             stateSet.clear(); 
             
-            // CHANGE START: Modified this block to default all time filters to '10_am' only
             if (id.startsWith('timeslot_')) {
                 // For any time filter (summary, city, detail), default to '10_am'
                 if (optionsSet.has('10_am')) stateSet.add('10_am');
             } else {
-            // CHANGE END
                 // For all other filters, the default is to select all available options
                 optionsSet.forEach(opt => { if(opt) stateSet.add(opt) });
             }
