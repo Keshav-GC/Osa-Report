@@ -196,7 +196,7 @@
                          </div>
                      </div>
                  </div>
-                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6 mb-8 items-end">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6 mb-8 items-end">
                     <div id="date-city-multiselect-container"></div>
                     <div id="bgr-city-multiselect-container"></div>
                     <div id="city-city-multiselect-container"></div>
@@ -226,7 +226,6 @@
         const cityCityContainer = document.getElementById('city-city-multiselect-container');
         const brandCityContainer = document.getElementById('brand-city-multiselect-container');
         const timeslotCityContainer = document.getElementById('timeslot-city-multiselect-container');
-        // *** ADDED: New selectors for City view ***
         const dateCityContainer = document.getElementById('date-city-multiselect-container');
         const skuCityContainer = document.getElementById('sku-city-multiselect-container');
         const outputCitySummaryDiv = document.getElementById('output-city-summary');
@@ -250,7 +249,6 @@
         
         // State for new City Summary filters
         let selectedBgrsCity = new Set(), selectedCitiesCity = new Set(), selectedBrandsCity = new Set();
-        // *** ADDED: New state for City view filters ***
         let selectedDatesCity = new Set(), selectedSkusCity = new Set();
         let selectedTimeslotsCity = new Set();
         
@@ -448,16 +446,14 @@
         }
 
         // --- CITY SUMMARY LOGIC ---
-        // *** MODIFIED: Added Date and SKU filters ***
         function initializeCityFilters() {
             const bgrs = new Set(baseData.map(row => row[columnKeys.bgr]));
             const cities = new Set(baseData.map(row => row[columnKeys.city]));
             const brands = new Set(baseData.map(row => row[columnKeys.brand]));
             const timeslots = new Set(baseData.map(row => row[columnKeys.time]));
-            const dates = new Set(baseData.map(row => row[columnKeys.date])); // *** ADDED ***
-            const skus = new Set(baseData.map(row => row[columnKeys.sku])); // *** ADDED ***
+            const dates = new Set(baseData.map(row => row[columnKeys.date])); 
+            const skus = new Set(baseData.map(row => row[columnKeys.sku])); 
             
-            // *** ADDED/REORDERED ***
             createSearchableMultiSelect(dateCityContainer, 'date_city', 'Date', dates, selectedDatesCity, renderCitySummaryTable);
             createSearchableMultiSelect(bgrCityContainer, 'bgr_city', 'BGR', bgrs, selectedBgrsCity, renderCitySummaryTable);
             createSearchableMultiSelect(cityCityContainer, 'city_city', 'City', cities, selectedCitiesCity, renderCitySummaryTable);
@@ -468,24 +464,20 @@
             renderCitySummaryTable();
         }
 
-        // *** MODIFIED: Added filtering for Date and SKU ***
         function renderCitySummaryTable() {
             let summaryData = baseData;
             
-            // *** ADDED: Date filter ***
             if (selectedDatesCity.size > 0) summaryData = summaryData.filter(row => selectedDatesCity.has(row[columnKeys.date]));
             if (selectedBgrsCity.size > 0) summaryData = summaryData.filter(row => selectedBgrsCity.has(row[columnKeys.bgr]));
             if (selectedCitiesCity.size > 0) summaryData = summaryData.filter(row => selectedCitiesCity.has(row[columnKeys.city]));
             if (selectedBrandsCity.size > 0) summaryData = summaryData.filter(row => selectedBrandsCity.has(row[columnKeys.brand]));
-            // *** ADDED: SKU filter ***
             if (selectedSkusCity.size > 0) summaryData = summaryData.filter(row => selectedSkusCity.has(row[columnKeys.sku]));
             
             if (summaryData.length === 0) { showError(outputCitySummaryDiv, "No data for selected summary filters."); return; }
             processAndRenderCityPivot(summaryData, outputCitySummaryDiv);
         }
         
-        // This function now receives pre-filtered data (including by date/sku)
-        // It correctly filters by time slot internally
+        // *** MODIFIED: To build nested pivotData[city][platform][time] ***
         function processAndRenderCityPivot(data, outputElement) {
             const pivotData = {}, platforms = new Set(), cities = new Set();
             const cleanAndParseFloat = (val) => parseFloat((typeof val === 'string' ? val.replace(/[^0-9.-]/g, '') : val));
@@ -499,26 +491,53 @@
                 
                 platforms.add(platform); cities.add(city);
                 if (!pivotData[city]) pivotData[city] = {};
-                if (!pivotData[city][platform]) {
-                    pivotData[city][platform] = { available_sum: 0, listed_sum: 0, total_sum: 0, osaxsales_sum: 0, listed_osaxsales_sum: 0, sales_sum: 0 };
+                if (!pivotData[city][platform]) pivotData[city][platform] = {}; // *** ADDED NESTING ***
+                if (!pivotData[city][platform][time]) { // *** ADDED NESTING ***
+                    pivotData[city][platform][time] = { available_sum: 0, listed_sum: 0, total_sum: 0, osaxsales_sum: 0, listed_osaxsales_sum: 0, sales_sum: 0 };
                 }
-                const cell = pivotData[city][platform];
+                const cell = pivotData[city][platform][time]; // *** UPDATED ***
                 cell.available_sum += available; cell.listed_sum += listed; cell.total_sum += total;
                 cell.osaxsales_sum += osaxsales; cell.listed_osaxsales_sum += listed_osaxsales; cell.sales_sum += sales;
             });
 
             const sortedPlatforms = Array.from(platforms).sort();
             const sortedCities = Array.from(cities).sort();
+            // *** ADDED: Get sorted list of SELECTED timeslots ***
+            const sortedTimes = Array.from(selectedTimeslotsCity).sort((a,b) => convertTimeTo24Hour(a) - convertTimeTo24Hour(b));
             
-            if (!sortedPlatforms.length || !sortedCities.length) { return showError(outputElement, "No valid data to display in summary."); }
-            displayCitySummaryPivot(pivotData, sortedPlatforms, sortedCities, outputElement, getCalcType(), getScopeType());
+            // *** MODIFIED: Check for sortedTimes length ***
+            if (!sortedPlatforms.length || !sortedCities.length || !sortedTimes.length) { 
+                return showError(outputElement, "No valid data to display. Check filters (must select at least one time slot)."); 
+            }
+            // *** MODIFIED: Pass sortedTimes to display function ***
+            displayCitySummaryPivot(pivotData, sortedPlatforms, sortedCities, sortedTimes, outputElement, getCalcType(), getScopeType());
         }
 
-        function displayCitySummaryPivot(pivotData, sortedPlatforms, sortedCities, outputElement, calcType, scopeType) {
+        // *** MODIFIED: To display nested Platform -> Time columns ***
+        function displayCitySummaryPivot(pivotData, sortedPlatforms, sortedCities, sortedTimes, outputElement, calcType, scopeType) {
             let tableHtml = `<div class="overflow-x-auto"><table class="min-w-full divide-y divide-gray-300">`;
-            tableHtml += `<thead class="bg-gray-50"><tr><th class="sticky left-0 bg-gray-50 z-10 py-3.5 pl-4 pr-3 text-left text-sm font-semibold">City</th>`;
-            sortedPlatforms.forEach(p => tableHtml += `<th class="px-3 py-3.5 text-center text-sm font-semibold">${p}</th>`);
-            tableHtml += `<th class="sticky right-0 bg-gray-50 z-10 py-3.5 pl-3 pr-4 text-center text-sm font-semibold">Grand Total</th></tr></thead>`;
+            
+            // *** MODIFIED: Two-row header ***
+            tableHtml += `<thead class="bg-gray-50">`;
+            // Row 1: Platforms
+            tableHtml += `<tr>`;
+            tableHtml += `<th rowspan="2" class="sticky left-0 bg-gray-50 z-10 py-3.5 pl-4 pr-3 text-left text-sm font-semibold">City</th>`;
+            sortedPlatforms.forEach(p => {
+                tableHtml += `<th colspan="${sortedTimes.length}" class="px-3 py-3.5 text-center text-sm font-semibold">${p}</th>`;
+            });
+            tableHtml += `<th rowspan="2" class="sticky right-0 bg-gray-50 z-10 py-3.5 pl-3 pr-4 text-center text-sm font-semibold">Grand Total</th>`;
+            tableHtml += `</tr>`;
+            // Row 2: Times
+            tableHtml += `<tr>`;
+            sortedPlatforms.forEach(p => {
+                sortedTimes.forEach(t => {
+                    tableHtml += `<th class="px-3 py-3.5 text-center text-sm font-semibold">${t}</th>`;
+                });
+            });
+            tableHtml += `</tr>`;
+            tableHtml += `</thead>`;
+            // *** END MODIFIED HEADER ***
+
             tableHtml += `<tbody class="divide-y divide-gray-200 bg-white">`;
 
             const calculateAvg = (totals) => {
@@ -534,24 +553,34 @@
                 return den > 0 ? (num / den) * 100 : 0;
             };
 
+            // *** MODIFIED: Initialize nested colTotals ***
             const colTotals = {};
-            sortedPlatforms.forEach(p => colTotals[p] = { available_sum: 0, listed_sum: 0, total_sum: 0, osaxsales_sum: 0, listed_osaxsales_sum: 0, sales_sum: 0 });
+            sortedPlatforms.forEach(p => {
+                colTotals[p] = {};
+                sortedTimes.forEach(t => {
+                    colTotals[p][t] = { available_sum: 0, listed_sum: 0, total_sum: 0, osaxsales_sum: 0, listed_osaxsales_sum: 0, sales_sum: 0 };
+                });
+            });
 
             sortedCities.forEach(city => {
                 let rowTotals = { available_sum: 0, listed_sum: 0, total_sum: 0, osaxsales_sum: 0, listed_osaxsales_sum: 0, sales_sum: 0 };
                 tableHtml += `<tr><td class="sticky left-0 bg-white z-10 font-medium py-4 pl-4 pr-3 text-sm">${city}</td>`;
                 
+                // *** MODIFIED: Nested loop for platform -> time ***
                 sortedPlatforms.forEach(platform => {
-                    const cell = pivotData[city]?.[platform];
-                    if (cell) {
-                        Object.keys(rowTotals).forEach(key => { 
-                            rowTotals[key] += cell[key]; 
-                            colTotals[platform][key] += cell[key]; 
-                        });
-                    }
-                    const avg = calculateAvg(cell);
-                    tableHtml += `<td class="text-center py-4 px-3 text-sm" style="background-color: ${getGradientColor(avg)};">${avg.toFixed(0)}%</td>`;
+                    sortedTimes.forEach(time => {
+                        const cell = pivotData[city]?.[platform]?.[time];
+                        if (cell) {
+                            Object.keys(rowTotals).forEach(key => { 
+                                rowTotals[key] += cell[key]; 
+                                colTotals[platform][time][key] += cell[key]; // *** MODIFIED ***
+                            });
+                        }
+                        const avg = calculateAvg(cell);
+                        tableHtml += `<td class="text-center py-4 px-3 text-sm" style="background-color: ${getGradientColor(avg)};">${avg.toFixed(0)}%</td>`;
+                    });
                 });
+                // *** END MODIFIED ***
                 
                 const rowAvg = calculateAvg(rowTotals);
                 tableHtml += `<td class="sticky right-0 bg-white z-10 font-semibold text-center py-4 pl-3 pr-4 text-sm" style="background-color: ${getGradientColor(rowAvg)};">${rowAvg.toFixed(0)}%</td></tr>`;
@@ -560,11 +589,15 @@
             tableHtml += `</tbody><tfoot class="bg-gray-50"><tr><th class="sticky left-0 bg-gray-50 z-10 pl-4 pr-3 pt-3 text-left font-semibold text-sm">Grand Total</th>`;
             let overallTotals = { available_sum: 0, listed_sum: 0, total_sum: 0, osaxsales_sum: 0, listed_osaxsales_sum: 0, sales_sum: 0 };
             
+            // *** MODIFIED: Nested loop for tfoot ***
             sortedPlatforms.forEach(platform => {
-                const colAvg = calculateAvg(colTotals[platform]);
-                tableHtml += `<th class="text-center px-3 pt-3 font-semibold text-sm" style="background-color: ${getGradientColor(colAvg)};">${colAvg.toFixed(0)}%</th>`;
-                Object.keys(overallTotals).forEach(key => overallTotals[key] += colTotals[platform][key]);
+                sortedTimes.forEach(time => {
+                    const colAvg = calculateAvg(colTotals[platform][time]); // *** MODIFIED ***
+                    tableHtml += `<th class="text-center px-3 pt-3 font-semibold text-sm" style="background-color: ${getGradientColor(colAvg)};">${colAvg.toFixed(0)}%</th>`;
+                    Object.keys(overallTotals).forEach(key => overallTotals[key] += colTotals[platform][time][key]); // *** MODIFIED ***
+                });
             });
+            // *** END MODIFIED ***
             
             const overallAvg = calculateAvg(overallTotals);
             tableHtml += `<th class="sticky right-0 bg-gray-50 z-10 py-3.5 pl-3 pr-4 text-center font-semibold text-sm" style="background-color: ${getGradientColor(overallAvg)};">${overallAvg.toFixed(0)}%</th>`;
@@ -722,15 +755,19 @@
             return `hsl(${hue}, 90%, 85%)`;
         }
 
-        // *** MODIFIED: Added default-to-latest-date logic ***
+        // *** MODIFIED: Added default for 'timeslot_city' to '10_am' and '5_pm' ***
         function createSearchableMultiSelect(container, id, label, optionsSet, stateSet, changeCallback, isTimeSort = false) {
             stateSet.clear(); 
             
-            if (id.startsWith('timeslot_')) {
-                // For any time filter (summary, city, detail), default to '10_am'
+            if (id === 'timeslot_city') {
+                // *** MODIFIED: Default to 10_am and 5_pm for City Summary ***
+                if (optionsSet.has('10_am')) stateSet.add('10_am');
+                if (optionsSet.has('5_pm')) stateSet.add('5_pm');
+            } else if (id.startsWith('timeslot_')) {
+                // For other time filters (summary, detail), default to '10_am'
                 if (optionsSet.has('10_am')) stateSet.add('10_am');
             } else if (id === 'date_city') {
-                // *** ADDED: For the City Date filter, default to latest date ***
+                // For the City Date filter, default to latest date
                 const sortedDates = Array.from(optionsSet).filter(Boolean).sort((a, b) => parseDate(b) - parseDate(a));
                 if (sortedDates.length > 0) stateSet.add(sortedDates[0]);
             } else {
@@ -760,7 +797,6 @@
                 optionsList.appendChild(selectAllDiv);
 
                 const optionsArray = Array.from(optionsSet).filter(Boolean);
-                // *** MODIFIED: Added date sort check ***
                 const sortedOptions = isTimeSort ? optionsArray.sort((a,b)=> convertTimeTo24Hour(a) - convertTimeTo24Hour(b)) : 
                                       id.startsWith('date_') ? optionsArray.sort((a,b)=> parseDate(a) - parseDate(b)) : optionsArray.sort();
 
