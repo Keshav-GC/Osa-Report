@@ -142,7 +142,7 @@
             <div>
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b pb-2 mb-6">
                      <h2 class="text-2xl font-bold text-gray-800">Detailed Breakdown</h2>
-                      <div class="flex flex-col md:flex-row md:space-x-4 items-end mt-4 md:mt-0">
+                     <div class="flex flex-col md:flex-row md:space-x-4 items-end mt-4 md:mt-0">
                          <div class="toggle-container">
                              <input type="radio" id="detail-calc-weighted" name="calcTypeDetail" value="weighted" class="hidden toggle-radio" checked>
                              <label for="detail-calc-weighted" class="toggle-label">Weighted OSA</label>
@@ -196,10 +196,12 @@
                          </div>
                      </div>
                  </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 items-end">
+                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6 mb-8 items-end">
+                    <div id="date-city-multiselect-container"></div>
                     <div id="bgr-city-multiselect-container"></div>
                     <div id="city-city-multiselect-container"></div>
                     <div id="brand-city-multiselect-container"></div>
+                    <div id="sku-city-multiselect-container"></div>
                     <div id="timeslot-city-multiselect-container"></div>
                 </div>
                 <div id="output-city-summary" class="bg-gray-50 p-4 rounded-lg min-h-[200px] flex items-center justify-center"></div>
@@ -224,6 +226,9 @@
         const cityCityContainer = document.getElementById('city-city-multiselect-container');
         const brandCityContainer = document.getElementById('brand-city-multiselect-container');
         const timeslotCityContainer = document.getElementById('timeslot-city-multiselect-container');
+        // *** ADDED: New selectors for City view ***
+        const dateCityContainer = document.getElementById('date-city-multiselect-container');
+        const skuCityContainer = document.getElementById('sku-city-multiselect-container');
         const outputCitySummaryDiv = document.getElementById('output-city-summary');
 
         const platformContainer = document.getElementById('platform-multiselect-container');
@@ -245,6 +250,8 @@
         
         // State for new City Summary filters
         let selectedBgrsCity = new Set(), selectedCitiesCity = new Set(), selectedBrandsCity = new Set();
+        // *** ADDED: New state for City view filters ***
+        let selectedDatesCity = new Set(), selectedSkusCity = new Set();
         let selectedTimeslotsCity = new Set();
         
         let selectedPlatforms = new Set(), selectedCities = new Set(), selectedBgrs = new Set(), selectedBrands = new Set(), selectedSkus = new Set();
@@ -441,28 +448,44 @@
         }
 
         // --- CITY SUMMARY LOGIC ---
+        // *** MODIFIED: Added Date and SKU filters ***
         function initializeCityFilters() {
             const bgrs = new Set(baseData.map(row => row[columnKeys.bgr]));
             const cities = new Set(baseData.map(row => row[columnKeys.city]));
             const brands = new Set(baseData.map(row => row[columnKeys.brand]));
             const timeslots = new Set(baseData.map(row => row[columnKeys.time]));
+            const dates = new Set(baseData.map(row => row[columnKeys.date])); // *** ADDED ***
+            const skus = new Set(baseData.map(row => row[columnKeys.sku])); // *** ADDED ***
             
+            // *** ADDED/REORDERED ***
+            createSearchableMultiSelect(dateCityContainer, 'date_city', 'Date', dates, selectedDatesCity, renderCitySummaryTable);
             createSearchableMultiSelect(bgrCityContainer, 'bgr_city', 'BGR', bgrs, selectedBgrsCity, renderCitySummaryTable);
             createSearchableMultiSelect(cityCityContainer, 'city_city', 'City', cities, selectedCitiesCity, renderCitySummaryTable);
             createSearchableMultiSelect(brandCityContainer, 'brand_city', 'Brand', brands, selectedBrandsCity, renderCitySummaryTable);
+            createSearchableMultiSelect(skuCityContainer, 'sku_city', 'SKU (Title)', skus, selectedSkusCity, renderCitySummaryTable);
             createSearchableMultiSelect(timeslotCityContainer, 'timeslot_city', 'Time Slot', timeslots, selectedTimeslotsCity, renderCitySummaryTable, true);
+            
             renderCitySummaryTable();
         }
 
+        // *** MODIFIED: Added filtering for Date and SKU ***
         function renderCitySummaryTable() {
             let summaryData = baseData;
+            
+            // *** ADDED: Date filter ***
+            if (selectedDatesCity.size > 0) summaryData = summaryData.filter(row => selectedDatesCity.has(row[columnKeys.date]));
             if (selectedBgrsCity.size > 0) summaryData = summaryData.filter(row => selectedBgrsCity.has(row[columnKeys.bgr]));
             if (selectedCitiesCity.size > 0) summaryData = summaryData.filter(row => selectedCitiesCity.has(row[columnKeys.city]));
             if (selectedBrandsCity.size > 0) summaryData = summaryData.filter(row => selectedBrandsCity.has(row[columnKeys.brand]));
+            // *** ADDED: SKU filter ***
+            if (selectedSkusCity.size > 0) summaryData = summaryData.filter(row => selectedSkusCity.has(row[columnKeys.sku]));
+            
             if (summaryData.length === 0) { showError(outputCitySummaryDiv, "No data for selected summary filters."); return; }
             processAndRenderCityPivot(summaryData, outputCitySummaryDiv);
         }
         
+        // This function now receives pre-filtered data (including by date/sku)
+        // It correctly filters by time slot internally
         function processAndRenderCityPivot(data, outputElement) {
             const pivotData = {}, platforms = new Set(), cities = new Set();
             const cleanAndParseFloat = (val) => parseFloat((typeof val === 'string' ? val.replace(/[^0-9.-]/g, '') : val));
@@ -699,12 +722,17 @@
             return `hsl(${hue}, 90%, 85%)`;
         }
 
+        // *** MODIFIED: Added default-to-latest-date logic ***
         function createSearchableMultiSelect(container, id, label, optionsSet, stateSet, changeCallback, isTimeSort = false) {
             stateSet.clear(); 
             
             if (id.startsWith('timeslot_')) {
                 // For any time filter (summary, city, detail), default to '10_am'
                 if (optionsSet.has('10_am')) stateSet.add('10_am');
+            } else if (id === 'date_city') {
+                // *** ADDED: For the City Date filter, default to latest date ***
+                const sortedDates = Array.from(optionsSet).filter(Boolean).sort((a, b) => parseDate(b) - parseDate(a));
+                if (sortedDates.length > 0) stateSet.add(sortedDates[0]);
             } else {
                 // For all other filters, the default is to select all available options
                 optionsSet.forEach(opt => { if(opt) stateSet.add(opt) });
@@ -732,7 +760,9 @@
                 optionsList.appendChild(selectAllDiv);
 
                 const optionsArray = Array.from(optionsSet).filter(Boolean);
-                const sortedOptions = isTimeSort ? optionsArray.sort((a,b)=> convertTimeTo24Hour(a) - convertTimeTo24Hour(b)) : optionsArray.sort();
+                // *** MODIFIED: Added date sort check ***
+                const sortedOptions = isTimeSort ? optionsArray.sort((a,b)=> convertTimeTo24Hour(a) - convertTimeTo24Hour(b)) : 
+                                      id.startsWith('date_') ? optionsArray.sort((a,b)=> parseDate(a) - parseDate(b)) : optionsArray.sort();
 
                 sortedOptions.forEach(opt => {
                     if (opt.toString().toLowerCase().includes(filter.toLowerCase())) {
