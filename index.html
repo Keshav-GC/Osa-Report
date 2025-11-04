@@ -200,7 +200,7 @@
                     <div id="date-city-multiselect-container"></div>
                     <div id="bgr-city-multiselect-container"></div>
                     <div id="city-city-multiselect-container"></div>
-                    <div id="brand-city-multiselect-container"></div>
+                    <div id="platform-city-multiselect-container"></div> <div id="brand-city-multiselect-container"></div>
                     <div id="sku-city-multiselect-container"></div>
                     <div id="timeslot-city-multiselect-container"></div>
                 </div>
@@ -224,6 +224,7 @@
         // Selectors for City Summary section
         const bgrCityContainer = document.getElementById('bgr-city-multiselect-container');
         const cityCityContainer = document.getElementById('city-city-multiselect-container');
+        const platformCityContainer = document.getElementById('platform-city-multiselect-container'); // ADDED
         const brandCityContainer = document.getElementById('brand-city-multiselect-container');
         const timeslotCityContainer = document.getElementById('timeslot-city-multiselect-container');
         const dateCityContainer = document.getElementById('date-city-multiselect-container');
@@ -249,6 +250,7 @@
         
         // State for new City Summary filters
         let selectedBgrsCity = new Set(), selectedCitiesCity = new Set(), selectedBrandsCity = new Set();
+        let selectedPlatformsCity = new Set(); // ADDED
         let selectedDatesCity = new Set(), selectedSkusCity = new Set();
         let selectedTimeslotsCity = new Set();
         
@@ -449,6 +451,7 @@
         function initializeCityFilters() {
             const bgrs = new Set(baseData.map(row => row[columnKeys.bgr]));
             const cities = new Set(baseData.map(row => row[columnKeys.city]));
+            const platforms = new Set(baseData.map(row => row[columnKeys.platform])); // ADDED
             const brands = new Set(baseData.map(row => row[columnKeys.brand]));
             const timeslots = new Set(baseData.map(row => row[columnKeys.time]));
             const dates = new Set(baseData.map(row => row[columnKeys.date])); 
@@ -457,6 +460,7 @@
             createSearchableMultiSelect(dateCityContainer, 'date_city', 'Date', dates, selectedDatesCity, renderCitySummaryTable);
             createSearchableMultiSelect(bgrCityContainer, 'bgr_city', 'BGR', bgrs, selectedBgrsCity, renderCitySummaryTable);
             createSearchableMultiSelect(cityCityContainer, 'city_city', 'City', cities, selectedCitiesCity, renderCitySummaryTable);
+            createSearchableMultiSelect(platformCityContainer, 'platform_city', 'Platform', platforms, selectedPlatformsCity, renderCitySummaryTable); // ADDED
             createSearchableMultiSelect(brandCityContainer, 'brand_city', 'Brand', brands, selectedBrandsCity, renderCitySummaryTable);
             createSearchableMultiSelect(skuCityContainer, 'sku_city', 'SKU (Title)', skus, selectedSkusCity, renderCitySummaryTable);
             createSearchableMultiSelect(timeslotCityContainer, 'timeslot_city', 'Time Slot', timeslots, selectedTimeslotsCity, renderCitySummaryTable, true);
@@ -470,6 +474,7 @@
             if (selectedDatesCity.size > 0) summaryData = summaryData.filter(row => selectedDatesCity.has(row[columnKeys.date]));
             if (selectedBgrsCity.size > 0) summaryData = summaryData.filter(row => selectedBgrsCity.has(row[columnKeys.bgr]));
             if (selectedCitiesCity.size > 0) summaryData = summaryData.filter(row => selectedCitiesCity.has(row[columnKeys.city]));
+            if (selectedPlatformsCity.size > 0) summaryData = summaryData.filter(row => selectedPlatformsCity.has(row[columnKeys.platform])); // ADDED
             if (selectedBrandsCity.size > 0) summaryData = summaryData.filter(row => selectedBrandsCity.has(row[columnKeys.brand]));
             if (selectedSkusCity.size > 0) summaryData = summaryData.filter(row => selectedSkusCity.has(row[columnKeys.sku]));
             
@@ -798,7 +803,7 @@
 
                 const optionsArray = Array.from(optionsSet).filter(Boolean);
                 const sortedOptions = isTimeSort ? optionsArray.sort((a,b)=> convertTimeTo24Hour(a) - convertTimeTo24Hour(b)) : 
-                                      id.startsWith('date_') ? optionsArray.sort((a,b)=> parseDate(a) - parseDate(b)) : optionsArray.sort();
+                                    id.startsWith('date_') ? optionsArray.sort((a,b)=> parseDate(a) - parseDate(b)) : optionsArray.sort();
 
                 sortedOptions.forEach(opt => {
                     if (opt.toString().toLowerCase().includes(filter.toLowerCase())) {
